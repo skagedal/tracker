@@ -1,8 +1,8 @@
 use chrono::{NaiveDate, NaiveTime};
 use regex::{Regex, Captures};
-use crate::document::Line::{Comment, DayHeader, OpenShift};
+use crate::document::Line::{Blank, ClosedShift, Comment, DayHeader, OpenShift, SpecialDay, SpecialShift};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Line {
     Comment {
         text: String
@@ -75,7 +75,10 @@ impl Parser {
         self.parse_comment(string)
             .or_else(|| self.parse_day_header(string))
             .or_else(|| self.parse_open_shift(string))
-            // TODO: Here, other parsers
+            .or_else(|| self.parse_closed_shift(string))
+            .or_else(|| self.parse_special_shift(string))
+            .or_else(|| self.parse_special_day(string))
+            .or_else(|| self.parse_blank(string))
             .or_else(|| None)
     }
 
@@ -105,10 +108,82 @@ impl Parser {
         })
     }
 
+    fn parse_closed_shift(self: &Self, string: &str) -> Option<Line> {
+        self.closed_shift_regex.captures(string).map(|m| ClosedShift {
+            start_time: NaiveTime::from_hms(
+                get_u32(&m, "startHour"),
+                get_u32(&m, "startMinute"),
+                0
+            ),
+            stop_time: NaiveTime:: from_hms(
+                get_u32(&m, "stopHour"),
+                get_u32(&m, "stopMinute"),
+                0
+            )
+        })
+    }
+
+    fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
+        self.special_shift_regex.captures(string).map(|m| SpecialShift {
+            text: String::from(m.name("text").unwrap().as_str()),
+            start_time: NaiveTime::from_hms(
+                get_u32(&m, "startHour"),
+                get_u32(&m, "startMinute"),
+                0
+            ),
+            stop_time: NaiveTime:: from_hms(
+                get_u32(&m, "stopHour"),
+                get_u32(&m, "stopMinute"),
+                0
+            )
+        })
+    }
+
+    fn parse_special_day(self: &Self, string: &str) -> Option<Line> {
+        self.special_day_regex.captures(string).map(|m| SpecialDay {
+            text: String::from(m.name("text").unwrap().as_str())
+        })
+    }
+
+    fn parse_blank(self: &Self, string: &str) -> Option<Line> {
+        self.blank_regex.captures(string).map(|_| Blank)
+    }
+
     fn parse_document(self: &Self, string: &str) -> Document {
+        // Far from pretty, but works..
+        
+        let mut preamble: Vec<Line> = Vec::new();
+        let mut days: Vec<Day> = Vec::new();
+        let mut current_date: Option<NaiveDate> = None;
+        let mut current_day_lines: Vec<Line> = Vec::new();
+
+        let lines = string.lines().map(|l| self.parse_line(l).unwrap());
+        for line in lines {
+            match current_date {
+                Some(date) => match line {
+                    DayHeader {date: new_date } => {
+                        let days_lines = current_day_lines.clone();
+                        current_day_lines.clear();
+                        days.push(Day { date: date, lines: days_lines });
+                        current_date = Some(new_date);
+                    }
+                    _ => current_day_lines.push(line)
+                }
+                None => match line {
+                    DayHeader {date: new_date } => {
+                        current_date = Some(new_date)
+                    }
+                    _ => preamble.push(line)
+                }
+            }
+        }
+        match current_date {
+            Some(date) => days.push(Day { date: date, lines: current_day_lines }),
+            None => ()
+        }
         Document {
-            preamble: vec![],
-            days: vec![]
+            preamble: preamble,
+            days: days
         }
     }
 }
@@ -162,7 +237,8 @@ mod tests {
 
     #[test]
     fn serialize_deserialize() {
-        let serialized_form = "[monday 2020-07-13]
+        let serialized_form = "# Preamble
+[monday 2020-07-13]
 * Vacation
 # Came back from Jämtland
 
@@ -182,7 +258,9 @@ mod tests {
 * 08:12-
 ";
         let document = Document {
-            preamble: vec![],
+            preamble: vec![
+                Comment { text: String::from("Preamble") }
+            ],
             days: vec![
                 Day {
                     date: NaiveDate::from_ymd(2020, 7, 13),
