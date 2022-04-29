@@ -1,5 +1,5 @@
 use chrono::{NaiveDate, NaiveTime};
-use regex::{Regex, Captures, CaptureLocations};
+use regex::{Regex, Captures};
 use crate::document::Line::{Comment, DayHeader, OpenShift};
 
 #[derive(PartialEq, Debug)]
@@ -28,11 +28,13 @@ pub enum Line {
     Blank,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Day {
     date: NaiveDate,
     lines: Vec<Line>,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Document {
     preamble: Vec<Line>,
     days: Vec<Day>,
@@ -102,11 +104,17 @@ impl Parser {
             )
         })
     }
+
+    fn parse_document(self: &Self, string: &str) -> Document {
+        Document {
+            preamble: vec![],
+            days: vec![]
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use regex::Regex;
     use crate::document::{Parser, Document, Day};
     use crate::document::Line::{Comment, SpecialDay, Blank, ClosedShift, SpecialShift, OpenShift, DayHeader};
     use chrono::{NaiveDate, NaiveTime};
@@ -154,7 +162,7 @@ mod tests {
 
     #[test]
     fn serialize_deserialize() {
-        let serializedForm = "[monday 2020-07-13]
+        let serialized_form = "[monday 2020-07-13]
 * Vacation
 # Came back from Jämtland
 
@@ -237,6 +245,13 @@ mod tests {
                 }
             ]
         };
+
+        let parser = Parser::new();
+        let parsed = parser.parse_document(serialized_form);
+        assert_eq!(
+            document,
+            parsed
+        )
     }
 
     fn time_hm(hour: u32, minute: u32) -> NaiveTime {
