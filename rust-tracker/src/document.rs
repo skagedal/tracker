@@ -59,7 +59,7 @@ fn get_u32(m: &Captures, name: &str) -> u32 {
 }
 
 impl Parser {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Parser {
             comment_regex: Regex::new(r"^# (?P<text>.*)$").unwrap(),
             day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]$").unwrap(),
@@ -149,7 +149,7 @@ impl Parser {
         self.blank_regex.captures(string).map(|_| Blank)
     }
 
-    fn parse_document(self: &Self, string: &str) -> Document {
+    pub fn parse_document(self: &Self, string: &str) -> Document {
         // Far from pretty, but works..
         
         let mut preamble: Vec<Line> = Vec::new();
