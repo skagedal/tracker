@@ -30,14 +30,29 @@ pub enum Line {
 
 #[derive(PartialEq, Debug)]
 pub struct Day {
-    date: NaiveDate,
-    lines: Vec<Line>,
+    pub date: NaiveDate,
+    pub lines: Vec<Line>,
 }
 
 #[derive(PartialEq, Debug)]
 pub struct Document {
     preamble: Vec<Line>,
     days: Vec<Day>,
+}
+
+impl Document {
+    pub fn new(preamble: Vec<Line>, days: Vec<Day>) -> Document {
+        return Document {
+            preamble: preamble,
+            days: days
+        }
+    }
+    pub fn empty() -> Document {
+        return Document {
+            preamble: vec![],
+            days: vec![]
+        }
+    }
 }
 
 pub struct Parser {

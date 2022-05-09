@@ -1,9 +1,11 @@
 // We shall read the file
 
 mod document;
+mod tracker;
 
-use std::fs;
+use chrono::{Local};
 use clap::{Parser, Subcommand};
+use crate::tracker::Tracker;
 
 /// Track work time
 #[derive(Parser, Debug)]
@@ -27,27 +29,39 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-
     match args.command {
-        Some(Commands::Start) => println!("Let's track!"),
-        Some(Commands::Stop) => println!("Let's stop tracking!"),
-        Some(Commands::Edit) => println!("Let's edit file!"),
-        Some(Commands::Report) => show_report(),
+        Some(Commands::Start) => start_tracking(Tracker::new()),
+        Some(Commands::Stop) => stop_tracking(),
+        Some(Commands::Edit) => edit_file(),
+        Some(Commands::Report) => show_report(Tracker::new()),
         None => println!("No commmand!")
     }
 }
 
-fn show_report() {
-    println!("Let's show a report!");
-    let result = fs::read_to_string("/Users/simon/.simons-assistant/data/tracker/2022-W18.txt");
-    match result {
-        Ok(content) => show_report_of_content(content),
-        Err(err) => eprintln!("Error: {}", err)
-    }
+fn edit_file() {
+    println!("Let's edit file!");
+    todo!()
 }
 
-fn show_report_of_content(content: String) {
-    let parser = document::Parser::new();
-    let document =  parser.parse_document(&content);
-    println!("{:?}", document);
+fn stop_tracking() {
+    println!("Let's stop tracking!");
+    todo!();
 }
+
+// Commands
+
+fn start_tracking(tracker: Tracker) {
+    let now = Local::now();
+    let date = now.naive_local().date();
+    let time = now.naive_local().time();
+
+    tracker.start_tracking(date, time);
+}
+
+fn show_report(tracker: Tracker) {
+    let now = Local::now();
+    let date = now.naive_local().date();
+
+    tracker.show_report(date);
+}
+
