@@ -3,15 +3,6 @@ package tech.skagedal.tracker.tracker
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import tech.skagedal.tracker.tracker.Day
-import tech.skagedal.tracker.tracker.Document
-import tech.skagedal.tracker.tracker.Line
-import tech.skagedal.tracker.tracker.Serializer
-import tech.skagedal.tracker.tracker.TimeTracker
-import tech.skagedal.tracker.tracker.TrackerFileAlreadyHasOpenShiftException
-import tech.skagedal.tracker.tracker.TrackerFileHasMultipleOpenShiftsInOneDayException
-import tech.skagedal.tracker.tracker.TrackerFileHasNoOpenShiftOnThatDayException
-import tech.skagedal.tracker.tracker.TrackerRepository
 import java.nio.file.FileSystems
 import java.time.Duration
 import java.time.LocalDate
@@ -19,7 +10,7 @@ import java.time.LocalTime
 import kotlin.test.assertTrue
 
 internal class TimeTrackerTest {
-    @org.junit.jupiter.api.Test
+    @Test
     internal fun `time spans are calculated correctly`() {
         val timeTracker = createTimeTracker()
         assertEquals(
