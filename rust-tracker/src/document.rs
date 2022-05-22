@@ -34,6 +34,17 @@ pub struct Day {
     pub lines: Vec<Line>,
 }
 
+impl Day {
+    pub fn has_open_shift(self) -> bool {
+        return self.lines.iter().any(|line| matches!(line, OpenShift {..}))
+    }
+
+    pub fn adding_shift(self, line: Line) -> Self {
+        todo!();
+        return self
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub struct Document {
     pub preamble: Vec<Line>,
@@ -41,17 +52,28 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn new(preamble: Vec<Line>, days: Vec<Day>) -> Document {
+    pub fn new(preamble: Vec<Line>, days: Vec<Day>) -> Self {
         return Document {
             preamble: preamble,
             days: days
         }
     }
-    pub fn empty() -> Document {
+
+    pub fn empty() -> Self {
         return Document {
             preamble: vec![],
             days: vec![]
         }
+    }
+
+    pub fn has_open_shift(self) -> bool {
+        return self.days.iter().any(|day| day.has_open_shift())
+    }
+
+    /// Returns the same document but with a certain day replaced
+    pub fn replacing_day(self, date: NaiveDate, day: Day) -> Self {
+        todo!();
+        return self
     }
 }
 

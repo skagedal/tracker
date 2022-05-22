@@ -2,7 +2,7 @@ use std::{fs, io};
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
-use crate::document::{Document, Parser};
+use crate::document::{Document, Line, Parser};
 use crate::document::Line::OpenShift;
 
 pub struct Tracker {
@@ -43,12 +43,15 @@ impl Tracker {
         println!("{:?}", document);
     }
 
-    pub fn document_with_tracking_started(&self, document: Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
-        if (document.days.iter().any(|day| day.lines.iter().any(|line| matches!(line, OpenShift {..})))) {
+    pub fn document_with_tracking_started(&self, document: &Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
+        if document.has_open_shift() {
             return Err(DocumentError::TrackerFileAlreadyHasOpenShift)
         }
+        if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
+            return Ok(document.replacing_day(date, day.adding_shift(OpenShift {start_time: time})))
+        }
         println!("{:?}", document.days);
-        return Ok(document)
+        return Ok(*document)
     }
 }
 
@@ -96,7 +99,7 @@ mod tests {
         let tracker = Tracker::new();
         let document = Document::empty();
         let new_document = tracker.document_with_tracking_started(
-            document,
+            &document,
             NaiveDate::from_ymd(2019, 12, 3),
             NaiveTime::from_hms(8, 0, 0)
         ).unwrap();
