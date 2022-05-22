@@ -36,8 +36,8 @@ pub struct Day {
 
 #[derive(PartialEq, Debug)]
 pub struct Document {
-    preamble: Vec<Line>,
-    days: Vec<Day>,
+    pub preamble: Vec<Line>,
+    pub days: Vec<Day>,
 }
 
 impl Document {
