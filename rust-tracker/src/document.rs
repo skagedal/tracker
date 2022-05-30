@@ -28,24 +28,31 @@ pub enum Line {
     Blank,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Day {
     pub date: NaiveDate,
     pub lines: Vec<Line>,
 }
 
 impl Day {
-    pub fn has_open_shift(self) -> bool {
+    pub fn has_open_shift(&self) -> bool {
         return self.lines.iter().any(|line| matches!(line, OpenShift {..}))
     }
 
-    pub fn adding_shift(self, line: Line) -> Self {
-        todo!();
-        return self
+    pub fn adding_shift(&self, line: Line) -> Self {
+        todo!(); // Implement correctly
+        Day {
+            date: self.date.clone(),
+            lines: self.lines
+                .iter()
+                .cloned()
+                .chain(vec![line].into_iter())
+                .collect()
+        }
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Document {
     pub preamble: Vec<Line>,
     pub days: Vec<Day>,
@@ -66,14 +73,21 @@ impl Document {
         }
     }
 
-    pub fn has_open_shift(self) -> bool {
+    pub fn has_open_shift(&self) -> bool {
         return self.days.iter().any(|day| day.has_open_shift())
     }
 
     /// Returns the same document but with a certain day replaced
-    pub fn replacing_day(self, date: NaiveDate, day: Day) -> Self {
-        todo!();
-        return self
+    pub fn replacing_day(&self, date: NaiveDate, day: Day) -> Self {
+        todo!(); // Implement correctly
+        Document {
+            preamble: self.preamble.clone(),
+            days: self.days
+                .iter()
+                .cloned()
+                .chain(vec![day].into_iter())
+                .collect()
+        }
     }
 }
 

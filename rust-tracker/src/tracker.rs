@@ -1,5 +1,4 @@
 use std::{fs, io};
-use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
 use crate::document::{Document, Line, Parser};
@@ -51,7 +50,7 @@ impl Tracker {
             return Ok(document.replacing_day(date, day.adding_shift(OpenShift {start_time: time})))
         }
         println!("{:?}", document.days);
-        return Ok(*document)
+        return Ok((*document).clone())
     }
 }
 
