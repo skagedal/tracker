@@ -42,8 +42,9 @@ tasks {
 }
 
 java {
-    sourceCompatibility = org.gradle.api.JavaVersion.VERSION_11
-    targetCompatibility = org.gradle.api.JavaVersion.VERSION_11
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

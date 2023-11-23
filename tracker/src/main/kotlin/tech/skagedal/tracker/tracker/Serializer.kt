@@ -45,7 +45,7 @@ class Serializer {
     }
 
     private fun headerDateFormat(date: LocalDate): String {
-        val weekDay = date.dayOfWeek.getDisplayName(TextStyle.FULL_STANDALONE, Locale.ENGLISH).toLowerCase()
+        val weekDay = date.dayOfWeek.getDisplayName(TextStyle.FULL_STANDALONE, Locale.ENGLISH).lowercase()
         val isoDate = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
         return "$weekDay $isoDate"
     }
