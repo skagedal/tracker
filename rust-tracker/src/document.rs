@@ -40,7 +40,6 @@ impl Day {
     }
 
     pub fn adding_shift(&self, line: Line) -> Self {
-        todo!(); // Implement correctly
         Day {
             date: self.date.clone(),
             lines: self.lines
@@ -79,13 +78,12 @@ impl Document {
 
     /// Returns the same document but with a certain day replaced
     pub fn replacing_day(&self, date: NaiveDate, day: Day) -> Self {
-        todo!(); // Implement correctly
         Document {
             preamble: self.preamble.clone(),
             days: self.days
                 .iter()
                 .cloned()
-                .chain(vec![day].into_iter())
+                .map(|d| if d.date.eq(&date) { day.clone() } else { d })
                 .collect()
         }
     }
@@ -383,7 +381,25 @@ mod tests {
         )
     }
 
+    #[test]
+    fn replacing_day_that_does_not_exist() {
+        let document = Document {
+            preamble: vec![],
+            days: vec![]
+        };
+        let new_document = document.replacing_day(
+            NaiveDate::from_ymd(2020, 7, 13),
+            Day {
+                date: NaiveDate::from_ymd(2020, 7, 13),
+                lines: vec![]
+            }
+        );
+        assert_eq!(document, new_document)
+    }
+
     fn time_hm(hour: u32, minute: u32) -> NaiveTime {
         NaiveTime::from_hms(hour, minute, 0)
     }
+
+
 }

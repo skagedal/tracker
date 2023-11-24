@@ -1,7 +1,7 @@
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
-use crate::document::{Document, Line, Parser};
+use crate::document::{Document, Parser};
 use crate::document::Line::OpenShift;
 
 pub struct Tracker {
@@ -11,12 +11,15 @@ pub struct Tracker {
 impl Tracker {
     pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
         let path_buf = week_tracker_file_create_if_needed(date);
-        let document = self.read_document(path_buf.as_path());
+        let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
+            panic!("Unexpected error reading document: {}", err);
+        });
 
         println!("Got a document: {:?}", document);
         println!("Now we should start tracking at {:?}", time);
 
-        todo!()
+        let new_document = self.document_with_tracking_started(&document, date, time);
+        println!("New document: {:?}", new_document);
     }
 
     pub fn show_report(&self, date: NaiveDate) {
