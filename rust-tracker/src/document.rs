@@ -112,10 +112,7 @@ impl Document {
     }
 
     pub fn empty() -> Self {
-        return Document {
-            preamble: vec![],
-            days: vec![]
-        }
+        return Document::new(vec![], vec![]);
     }
 
     pub fn has_open_shift(&self) -> bool {
