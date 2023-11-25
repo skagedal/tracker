@@ -35,11 +35,12 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
+    let tracker = Tracker::new_with_weekfile(args.weekfile);
     match args.command {
-        Some(Commands::Start) => start_tracking(Tracker::new_with_weekfile(args.weekfile)),
+        Some(Commands::Start) => start_tracking(tracker),
         Some(Commands::Stop) => stop_tracking(),
         Some(Commands::Edit) => edit_file(),
-        Some(Commands::Report) => show_report(Tracker::new()),
+        Some(Commands::Report) => show_report(tracker),
         None => println!("No commmand!")
     }
 }

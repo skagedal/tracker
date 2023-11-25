@@ -1,3 +1,4 @@
+use std::fs::{File, OpenOptions};
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
@@ -90,7 +91,21 @@ fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
     if let Some(parent_path) = path.parent() {
         fs::create_dir_all(parent_path).unwrap_or_else(|err| eprintln!("Error: {}", err));
     }
-    // TODO: create default document if needed
+
+    match(OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)) {
+        Ok(file) => {
+            println!("Created file: {:?} - should write contents to it", file);
+        },
+        Err(err) => {
+            if err.kind() != io::ErrorKind::AlreadyExists {
+                eprintln!("Error: {}", err);
+            }
+        }
+    }
+    
     return path;
 }
 
