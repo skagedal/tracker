@@ -38,7 +38,7 @@ fn main() {
     let tracker = Tracker::new_with_weekfile(args.weekfile);
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),
-        Some(Commands::Stop) => stop_tracking(),
+        Some(Commands::Stop) => stop_tracking(tracker),
         Some(Commands::Edit) => edit_file(),
         Some(Commands::Report) => show_report(tracker),
         None => println!("No commmand!")
@@ -50,11 +50,6 @@ fn edit_file() {
     todo!()
 }
 
-fn stop_tracking() {
-    println!("Let's stop tracking!");
-    todo!();
-}
-
 // Commands
 
 fn start_tracking(tracker: Tracker) {
@@ -63,6 +58,14 @@ fn start_tracking(tracker: Tracker) {
     let time = now.naive_local().time();
 
     tracker.start_tracking(date, time);
+}
+
+fn stop_tracking(tracker: Tracker) {
+    let now = Local::now();
+    let date = now.naive_local().date();
+    let time = now.naive_local().time();
+
+    tracker.stop_tracking(date, time);
 }
 
 fn show_report(tracker: Tracker) {
