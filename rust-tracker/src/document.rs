@@ -174,52 +174,52 @@ impl Parser {
 
     fn parse_day_header(self: &Self, string: &str) -> Option<Line> {
         self.day_header_regex.captures(string).map(|m| DayHeader {
-            date: NaiveDate::from_ymd(
+            date: NaiveDate::from_ymd_opt(
                 get_i32(&m, "year"),
                 get_u32(&m, "month"),
                 get_u32(&m, "day")
-            )
+            ).unwrap()
         })
     }
 
     fn parse_open_shift(self: &Self, string: &str) -> Option<Line> {
         self.open_shift_regex.captures(string).map(|m| OpenShift {
-            start_time: NaiveTime::from_hms(
+            start_time: NaiveTime::from_hms_opt(
                 get_u32(&m, "hour"),
                 get_u32(&m, "minute"),
                 0
-            )
+            ).unwrap()
         })
     }
 
     fn parse_closed_shift(self: &Self, string: &str) -> Option<Line> {
         self.closed_shift_regex.captures(string).map(|m| ClosedShift {
-            start_time: NaiveTime::from_hms(
+            start_time: NaiveTime::from_hms_opt(
                 get_u32(&m, "startHour"),
                 get_u32(&m, "startMinute"),
                 0
-            ),
-            stop_time: NaiveTime:: from_hms(
+            ).unwrap(),
+            stop_time: NaiveTime:: from_hms_opt(
                 get_u32(&m, "stopHour"),
                 get_u32(&m, "stopMinute"),
                 0
-            )
+            ).unwrap()
         })
     }
 
     fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
         self.special_shift_regex.captures(string).map(|m| SpecialShift {
             text: String::from(m.name("text").unwrap().as_str()),
-            start_time: NaiveTime::from_hms(
+            start_time: NaiveTime::from_hms_opt(
                 get_u32(&m, "startHour"),
                 get_u32(&m, "startMinute"),
                 0
-            ),
-            stop_time: NaiveTime:: from_hms(
+            ).unwrap(),
+            stop_time: NaiveTime:: from_hms_opt(
                 get_u32(&m, "stopHour"),
                 get_u32(&m, "stopMinute"),
                 0
-            )
+            ).unwrap()
         })
     }
 
@@ -288,7 +288,7 @@ mod tests {
         );
 
         assert_eq!(
-            Option::Some(DayHeader { date: NaiveDate::from_ymd(2021, 9, 13)}),
+            Option::Some(DayHeader { date: NaiveDate::from_ymd_opt(2021, 9, 13).unwrap()}),
             parser.parse_line("[monday 2021-09-13]")
         );
 
@@ -347,7 +347,7 @@ mod tests {
             ],
             days: vec![
                 Day {
-                    date: NaiveDate::from_ymd(2020, 7, 13),
+                    date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
                     lines: vec![
                         SpecialDay { text: String::from("Vacation") },
                         Comment { text: String::from("Came back from Jämtland")},
@@ -355,7 +355,7 @@ mod tests {
                     ]
                 },
                 Day {
-                    date: NaiveDate::from_ymd(2020, 7, 14),
+                    date: NaiveDate::from_ymd_opt(2020, 7, 14).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(8, 32),
@@ -373,7 +373,7 @@ mod tests {
                     ]
                 },
                 Day {
-                    date: NaiveDate::from_ymd(2020, 7, 15),
+                    date: NaiveDate::from_ymd_opt(2020, 7, 15).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(11, 0),
@@ -383,7 +383,7 @@ mod tests {
                     ]
                 },
                 Day {
-                    date: NaiveDate::from_ymd(2020, 7, 16),
+                    date: NaiveDate::from_ymd_opt(2020, 7, 16).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(8, 0),
@@ -398,7 +398,7 @@ mod tests {
                     ]
                 },
                 Day {
-                    date: NaiveDate::from_ymd(2020, 7, 17),
+                    date: NaiveDate::from_ymd_opt(2020, 7, 17).unwrap(),
                     lines: vec![
                         OpenShift {
                             start_time: time_hm(8, 12)
@@ -423,9 +423,9 @@ mod tests {
             days: vec![]
         };
         let new_document = document.replacing_day(
-            NaiveDate::from_ymd(2020, 7, 13),
+            NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
             Day {
-                date: NaiveDate::from_ymd(2020, 7, 13),
+                date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
                 lines: vec![]
             }
         );
@@ -433,7 +433,7 @@ mod tests {
     }
 
     fn time_hm(hour: u32, minute: u32) -> NaiveTime {
-        NaiveTime::from_hms(hour, minute, 0)
+        NaiveTime::from_hms_opt(hour, minute, 0).unwrap()
     }
 
 

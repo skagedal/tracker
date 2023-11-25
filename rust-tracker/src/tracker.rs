@@ -5,12 +5,13 @@ use crate::document::{Document, Parser, Day};
 use crate::document::Line::OpenShift;
 
 pub struct Tracker {
+    weekfile: Option<PathBuf>,
     parser: Parser,
 }
 
 impl Tracker {
     pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
-        let path_buf = week_tracker_file_create_if_needed(date);
+        let path_buf = week_tracker_file_create_if_needed(self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date)));
         let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
             panic!("Unexpected error reading document: {}", err);
         });
@@ -23,7 +24,7 @@ impl Tracker {
     }
 
     pub fn show_report(&self, date: NaiveDate) {
-        let path = week_tracker_file_create_if_needed(date);
+        let path = week_tracker_file_for_date_create_if_needed(date);
         let result = fs::read_to_string(path);
         match result {
             Ok(content) => self.show_report_of_content(content),
@@ -64,6 +65,14 @@ pub enum DocumentError {
 impl Tracker {
     pub fn new() -> Self {
         return Tracker {
+            weekfile: None,
+            parser: Parser::new()
+        }
+    }
+
+    pub fn new_with_weekfile(weekfile: Option<PathBuf>) -> Self {
+        return Tracker {
+            weekfile,
             parser: Parser::new()
         }
     }
@@ -71,8 +80,12 @@ impl Tracker {
 
 // Week tracker file
 
-fn week_tracker_file_create_if_needed(date: NaiveDate) -> PathBuf {
-    let path = week_tracker_file(date);
+fn week_tracker_file_for_date_create_if_needed(date: NaiveDate) -> PathBuf {
+    let path = week_tracker_file_for_date(date);
+    return week_tracker_file_create_if_needed(path);
+}
+
+fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
     // Create parents if needed
     if let Some(parent_path) = path.parent() {
         fs::create_dir_all(parent_path).unwrap_or_else(|err| eprintln!("Error: {}", err));
@@ -81,7 +94,7 @@ fn week_tracker_file_create_if_needed(date: NaiveDate) -> PathBuf {
     return path;
 }
 
-fn week_tracker_file(date: NaiveDate) -> PathBuf {
+fn week_tracker_file_for_date(date: NaiveDate) -> PathBuf {
     dirs::home_dir().unwrap()
         .join(".simons-assistant")
         .join("data")
@@ -101,18 +114,18 @@ mod tests {
         let document = Document::empty();
         let new_document = tracker.document_with_tracking_started(
             &document,
-            NaiveDate::from_ymd(2019, 12, 3),
-            NaiveTime::from_hms(8, 0, 0)
+            NaiveDate::from_ymd_opt(2019, 12, 3).unwrap(),
+            NaiveTime::from_hms_opt(8, 0, 0).unwrap()
         ).unwrap();
         assert_eq!(
             Document::new(
                 vec![],
                 vec![
                     Day {
-                        date: NaiveDate::from_ymd(2019, 12, 3),
+                        date: NaiveDate::from_ymd_opt(2019, 12, 3).unwrap(),
                         lines: vec![
                             Line::OpenShift {
-                                start_time: NaiveTime::from_hms(8, 0, 0)
+                                start_time: NaiveTime::from_hms_opt(8, 0, 0).unwrap()
                             }
                         ]
                     }
@@ -129,11 +142,11 @@ mod tests {
             vec![],
             vec![
                 Day {
-                    date: NaiveDate::from_ymd(2019, 12, 2),
+                    date: NaiveDate::from_ymd_opt(2019, 12, 2).unwrap(),
                     lines: vec![
                         Line::ClosedShift { 
-                            start_time: NaiveTime::from_hms(10, 0, 0), 
-                            stop_time: NaiveTime::from_hms(10, 30, 0) 
+                            start_time: NaiveTime::from_hms_opt(10, 0, 0).unwrap(), 
+                            stop_time: NaiveTime::from_hms_opt(10, 30, 0).unwrap() 
                         }
                     ]
                 }
@@ -141,28 +154,28 @@ mod tests {
         );
         let new_document = tracker.document_with_tracking_started(
             &document,
-            NaiveDate::from_ymd(2019, 12, 3),
-            NaiveTime::from_hms(8, 0, 0)
+            NaiveDate::from_ymd_opt(2019, 12, 3).unwrap(),
+            NaiveTime::from_hms_opt(8, 0, 0).unwrap()
         ).unwrap();
         assert_eq!(
             Document::new(
                 vec![],
                 vec![
                     Day {
-                        date: NaiveDate::from_ymd(2019, 12, 2),
+                        date: NaiveDate::from_ymd_opt(2019, 12, 2).unwrap(),
                         lines: vec![
                             Line::ClosedShift { 
-                                start_time: NaiveTime::from_hms(10, 0, 0), 
-                                stop_time: NaiveTime::from_hms(10, 30, 0) 
+                                start_time: NaiveTime::from_hms_opt(10, 0, 0).unwrap(), 
+                                stop_time: NaiveTime::from_hms_opt(10, 30, 0).unwrap() 
                             },
                             Line::Blank
                         ]
                     },
                     Day {
-                        date: NaiveDate::from_ymd(2019, 12, 3),
+                        date: NaiveDate::from_ymd_opt(2019, 12, 3).unwrap(),
                         lines: vec![
                             Line::OpenShift {
-                                start_time: NaiveTime::from_hms(8, 0, 0)
+                                start_time: NaiveTime::from_hms_opt(8, 0, 0).unwrap()
                             }
                         ]
                     }
@@ -171,4 +184,6 @@ mod tests {
             new_document
         )
     }
+
+
 }
