@@ -1,7 +1,7 @@
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
-use crate::document::{Document, Parser};
+use crate::document::{Document, Parser, Day};
 use crate::document::Line::OpenShift;
 
 pub struct Tracker {
@@ -52,13 +52,12 @@ impl Tracker {
         if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
             return Ok(document.replacing_day(date, day.adding_shift(OpenShift {start_time: time})))
         }
-        println!("{:?}", document.days);
-        return Ok((*document).clone())
+        return Ok(document.inserting_day(Day::create(date, vec![OpenShift {start_time: time}])));
     }
 }
 
 #[derive(Debug, Clone)]
-enum DocumentError {
+pub enum DocumentError {
     TrackerFileAlreadyHasOpenShift
 }
 

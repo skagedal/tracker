@@ -49,6 +49,13 @@ impl Day {
                 .collect()
         }
     }
+
+    pub fn create(date: NaiveDate, lines: Vec<Line>) -> Self {
+        Day {
+            date: date,
+            lines: lines
+        }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -84,6 +91,17 @@ impl Document {
                 .iter()
                 .cloned()
                 .map(|d| if d.date.eq(&date) { day.clone() } else { d })
+                .collect()
+        }
+    }
+
+    pub fn inserting_day(&self, day: Day) -> Self {
+        Document {
+            preamble: self.preamble.clone(),
+            days: self.days
+                .iter()
+                .cloned()
+                .chain(vec![day].into_iter())
                 .collect()
         }
     }
