@@ -65,6 +65,7 @@ pub enum DocumentError {
 }
 
 impl Tracker {
+    #[cfg(test)]
     pub fn new() -> Self {
         return Tracker {
             weekfile: None,
