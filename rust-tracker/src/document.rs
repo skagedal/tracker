@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{NaiveDate, NaiveTime, Datelike};
 use regex::{Regex, Captures};
 use crate::document::Line::{Blank, ClosedShift, Comment, DayHeader, OpenShift, SpecialDay, SpecialShift};
 
@@ -28,6 +28,20 @@ pub enum Line {
     Blank,
 }
 
+impl ToString for Line {
+    fn to_string(&self) -> String {
+        match self {
+            Comment { text } => format!("# {}", text),
+            DayHeader { date } => format!("[{} {}]", "foobar", date),
+            OpenShift { start_time } => format!("* {}-{}", start_time.format("%H:%M"), ""),
+            ClosedShift { start_time, stop_time } => format!("* {}-{}", start_time.format("%H:%M"), stop_time.format("%H:%M")),
+            SpecialDay { text } => format!("* {}", text),
+            SpecialShift { text, start_time, stop_time } => format!("* {} {}-{}", text, start_time.format("%H:%M"), stop_time.format("%H:%M")),
+            Blank => String::from("")
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Day {
     pub date: NaiveDate,
@@ -55,6 +69,31 @@ impl Day {
             date: date,
             lines: lines
         }
+    }
+}
+
+fn format_weekday(date: NaiveDate) -> String {
+    match date.weekday() {
+        chrono::Weekday::Mon => String::from("monday"),
+        chrono::Weekday::Tue => String::from("tuesday"),
+        chrono::Weekday::Wed => String::from("wednesday"),
+        chrono::Weekday::Thu => String::from("thursday"),
+        chrono::Weekday::Fri => String::from("friday"),
+        chrono::Weekday::Sat => String::from("saturday"),
+        chrono::Weekday::Sun => String::from("sunday"),
+    }
+}
+
+impl ToString for Day {
+    fn to_string(&self) -> String {
+        let mut string = String::new();
+        string.push_str(&format!("[{} {}]", format_weekday(self.date), self.date));
+        string.push_str("\n");
+        for line in &self.lines {
+            string.push_str(&line.to_string());
+            string.push_str("\n");
+        }
+        string
     }
 }
 
@@ -121,6 +160,20 @@ impl Document {
                 .chain(days_after.into_iter())
                 .collect()
         }
+    }
+}
+
+impl ToString for Document {
+    fn to_string(&self) -> String {
+        let mut string = String::new();
+        for line in &self.preamble {
+            string.push_str(&line.to_string());
+            string.push_str("\n");
+        }
+        for day in &self.days {
+            string.push_str(&day.to_string());
+        }
+        string
     }
 }
 
@@ -320,28 +373,49 @@ mod tests {
     }
 
     #[test]
-    fn serialize_deserialize() {
-        let serialized_form = "# Preamble
-[monday 2020-07-13]
-* Vacation
-# Came back from Jämtland
+    fn deserialize() {
+        let serialized_document = example_1_text();
+        let document = example_1_document();
 
-[tuesday 2020-07-14]
-* 08:32-12:02
-* 12:30-13:01
-* 13:45-18:03
+        let parser = Parser::new();
+        let parsed = parser.parse_document(&serialized_document);
+        assert_eq!(document, parsed)
+    }
 
-[wednesday 2020-07-15]
-* 11:00-18:00
+    #[test]
+    fn serialize() {
+        let serialized_document = example_1_text();
+        let document = example_1_document();
 
-[thursday 2020-07-16]
-* 08:00-12:00
-* VAB 13:00-17:00
+        assert_eq!(serialized_document, document.to_string())
+    }
 
-[friday 2020-07-17]
-* 08:12-
-";
+    #[test]
+    fn replacing_day_that_does_not_exist() {
         let document = Document {
+            preamble: vec![],
+            days: vec![]
+        };
+        let new_document = document.replacing_day(
+            NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
+            Day {
+                date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
+                lines: vec![]
+            }
+        );
+        assert_eq!(document, new_document)
+    }
+
+    // Helpers
+
+    fn time_hm(hour: u32, minute: u32) -> NaiveTime {
+        NaiveTime::from_hms_opt(hour, minute, 0).unwrap()
+    }
+
+    // Test data
+
+    fn example_1_document() -> Document {
+        Document {
             preamble: vec![
                 Comment { text: String::from("Preamble") }
             ],
@@ -406,34 +480,30 @@ mod tests {
                     ]
                 }
             ]
-        };
-
-        let parser = Parser::new();
-        let parsed = parser.parse_document(serialized_form);
-        assert_eq!(
-            document,
-            parsed
-        )
+        }
     }
 
-    #[test]
-    fn replacing_day_that_does_not_exist() {
-        let document = Document {
-            preamble: vec![],
-            days: vec![]
-        };
-        let new_document = document.replacing_day(
-            NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
-            Day {
-                date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
-                lines: vec![]
-            }
-        );
-        assert_eq!(document, new_document)
-    }
+    fn example_1_text() -> String {
+        String::from("# Preamble
+[monday 2020-07-13]
+* Vacation
+# Came back from Jämtland
 
-    fn time_hm(hour: u32, minute: u32) -> NaiveTime {
-        NaiveTime::from_hms_opt(hour, minute, 0).unwrap()
+[tuesday 2020-07-14]
+* 08:32-12:02
+* 12:30-13:01
+* 13:45-18:03
+
+[wednesday 2020-07-15]
+* 11:00-18:00
+
+[thursday 2020-07-16]
+* 08:00-12:00
+* VAB 13:00-17:00
+
+[friday 2020-07-17]
+* 08:12-
+")
     }
 
 
