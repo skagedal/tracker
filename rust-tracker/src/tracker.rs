@@ -121,4 +121,54 @@ mod tests {
             new_document
         )
     }
+
+    #[test]
+    fn blank_line_is_created_before_inserted_date() {
+        let tracker = Tracker::new();
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: NaiveDate::from_ymd(2019, 12, 2),
+                    lines: vec![
+                        Line::ClosedShift { 
+                            start_time: NaiveTime::from_hms(10, 0, 0), 
+                            stop_time: NaiveTime::from_hms(10, 30, 0) 
+                        }
+                    ]
+                }
+            ]
+        );
+        let new_document = tracker.document_with_tracking_started(
+            &document,
+            NaiveDate::from_ymd(2019, 12, 3),
+            NaiveTime::from_hms(8, 0, 0)
+        ).unwrap();
+        assert_eq!(
+            Document::new(
+                vec![],
+                vec![
+                    Day {
+                        date: NaiveDate::from_ymd(2019, 12, 2),
+                        lines: vec![
+                            Line::ClosedShift { 
+                                start_time: NaiveTime::from_hms(10, 0, 0), 
+                                stop_time: NaiveTime::from_hms(10, 30, 0) 
+                            },
+                            Line::Blank
+                        ]
+                    },
+                    Day {
+                        date: NaiveDate::from_ymd(2019, 12, 3),
+                        lines: vec![
+                            Line::OpenShift {
+                                start_time: NaiveTime::from_hms(8, 0, 0)
+                            }
+                        ]
+                    }
+                ]
+            ),
+            new_document
+        )
+    }
 }

@@ -95,13 +95,30 @@ impl Document {
         }
     }
 
+    /// Returns the same document but with a certain day inserted in the right place.
+    /// And with a blank line before it if needed.
     pub fn inserting_day(&self, day: Day) -> Self {
+        let mut days_before: Vec<Day> = self.days
+            .iter()
+            .cloned()
+            .filter(|d| d.date < day.date)
+            .collect::<Vec<Day>>();
+        let number_of_days = days_before.len();
+        if number_of_days > 0 {
+            days_before[number_of_days - 1].lines.push(Blank);
+        }
+        let days_inbetween: Vec<Day> = vec!(day.clone());
+        let days_after: Vec<Day> = self.days
+            .iter()
+            .cloned()
+            .filter(|d| d.date > day.date)
+            .collect::<Vec<Day>>();
         Document {
             preamble: self.preamble.clone(),
-            days: self.days
-                .iter()
-                .cloned()
-                .chain(vec![day].into_iter())
+            days: days_before
+                .into_iter()
+                .chain(days_inbetween.into_iter())
+                .chain(days_after.into_iter())
                 .collect()
         }
     }
