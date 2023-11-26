@@ -4,7 +4,7 @@ use std::io::Write;
 use std::process::Command;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{NaiveDate, NaiveTime, NaiveDateTime};
 use crate::document::{Document, Parser, Day};
 use crate::document::Line::OpenShift;
 use crate::report::Report;
@@ -51,11 +51,11 @@ impl Tracker {
             .expect("Could not open editor");
     }
 
-    pub fn show_report(&self, date: NaiveDate) {
-        let path = week_tracker_file_for_date_create_if_needed(date);
+    pub fn show_report(&self, now: NaiveDateTime) {
+        let path = week_tracker_file_for_date_create_if_needed(now.date());
         let result = fs::read_to_string(path);
         match result {
-            Ok(content) => self.show_report_of_content(content, date),
+            Ok(content) => self.show_report_of_content(content, now),
             Err(err) => eprintln!("Error: {}", err)
         }
     }
@@ -67,9 +67,9 @@ impl Tracker {
         }
     }
 
-    fn show_report_of_content(&self, content: String, today: NaiveDate) {
+    fn show_report_of_content(&self, content: String, now: NaiveDateTime) {
         let document = self.parser.parse_document(&content);
-        let report = Report::from_document(&document, &today);
+        let report = Report::from_document(&document, &now);
         println!("{:?}", report);
     }
 

@@ -71,9 +71,8 @@ fn edit_file(tracker: Tracker) {
 }
 
 fn show_report(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
+    let now = Local::now().naive_local();
 
-    tracker.show_report(date);
+    tracker.show_report(now);
 }
 
