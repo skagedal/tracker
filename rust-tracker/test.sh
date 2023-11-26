@@ -27,5 +27,6 @@ $TRACKER -w $TESTWEEKFILE stop
 echo ">> Stopped tracking, now file is:"
 cat $TESTWEEKFILE
 
-echo ">> Editing..."
-$TRACKER -w $TESTWEEKFILE edit
+echo ">> Showing report..."
+$TRACKER -w $TESTWEEKFILE report
+

@@ -1,5 +1,6 @@
 mod document;
 mod tracker;
+mod report;
 
 use std::path::PathBuf;
 

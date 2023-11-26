@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::{OpenOptions};
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::process::Command;
 use std::{fs, io};
@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
 use crate::document::{Document, Parser, Day};
 use crate::document::Line::OpenShift;
+use crate::report::Report;
 
 pub struct Tracker {
     weekfile: Option<PathBuf>,
@@ -57,8 +58,6 @@ impl Tracker {
             Ok(content) => self.show_report_of_content(content),
             Err(err) => eprintln!("Error: {}", err)
         }
-
-        todo!()
     }
 
     fn read_document(&self, path: &Path) -> io::Result<Document> {
@@ -70,6 +69,7 @@ impl Tracker {
 
     fn show_report_of_content(&self, content: String) {
         let document = self.parser.parse_document(&content);
+        let report = Report::from_document(&document);
         println!("{:?}", document);
     }
 
