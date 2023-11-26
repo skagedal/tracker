@@ -28,6 +28,12 @@ pub enum Line {
     Blank,
 }
 
+impl Line {
+    fn is_shift(&self) -> bool {
+        return matches!(self, OpenShift {..}) || matches!(self, ClosedShift {..}) || matches!(self, SpecialShift {..})
+    }
+}
+
 impl ToString for Line {
     fn to_string(&self) -> String {
         match self {
@@ -54,13 +60,15 @@ impl Day {
     }
 
     pub fn adding_shift(&self, line: Line) -> Self {
+        let before = self.lines.clone().into_iter().take_while(|line| line.is_shift());
+        let after = self.lines.clone().into_iter().skip_while(|line| line.is_shift());
+        let lines: Vec<Line> = before
+            .chain(vec![line].into_iter())
+            .chain(after)
+            .collect();
         Day {
             date: self.date.clone(),
-            lines: self.lines
-                .iter()
-                .cloned()
-                .chain(vec![line].into_iter())
-                .collect()
+            lines: lines
         }
     }
 

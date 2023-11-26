@@ -298,4 +298,51 @@ mod tests {
         )
     }
 
+    #[test]
+    fn new_open_shifts_are_added_right_after_last_existing_shift() {
+        let tracker = Tracker::new();
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: date(2019, 12, 2),
+                    lines: vec![
+                        Line::ClosedShift { 
+                            start_time: time(10, 0, 0), 
+                            stop_time: time(10, 30, 0)
+                        },
+                        Line::Blank
+                    ]
+                },
+            ]
+        );
+        let new_document = tracker.document_with_tracking_started(
+            &document,
+            date(2019, 12, 2),
+            time(12, 0, 0)
+        ).unwrap();
+
+        assert_eq!(
+            Document::new(
+                vec![], 
+                vec![
+                    Day {
+                        date: date(2019, 12, 2),
+                        lines: vec![
+                            Line::ClosedShift { 
+                                start_time: time(10, 0, 0), 
+                                stop_time: time(10, 30, 0)
+                            },
+                            Line::OpenShift {
+                                start_time: time(12, 0, 0)
+                            },
+                            Line::Blank
+                        ]
+                    },
+                ]
+            ),
+            new_document
+        );
+    }
+
 }
