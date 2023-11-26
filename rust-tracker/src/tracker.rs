@@ -345,4 +345,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn we_can_not_start_a_shift_if_one_is_already_started() {
+        let tracker = Tracker::new();
+        let result = tracker.document_with_tracking_started(
+            &Document::new(
+                vec![],
+                vec![
+                    Day {
+                        date: date(2019, 12, 2),
+                        lines: vec![
+                            Line::OpenShift { 
+                                start_time: time(10, 0, 0)
+                            }
+                        ]
+                    },
+                ]
+            ),
+            date(2019, 12, 2),
+            time(12, 0, 0)
+        );
+        assert!(result.is_err());
+    }
+
 }
