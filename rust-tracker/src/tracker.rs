@@ -4,7 +4,7 @@ use std::io::Write;
 use std::process::Command;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
-use chrono::{NaiveDate, NaiveTime, NaiveDateTime};
+use chrono::{NaiveDate, NaiveTime, NaiveDateTime, Duration};
 use crate::document::{Document, Parser, Day};
 use crate::document::Line::OpenShift;
 use crate::report::Report;
@@ -14,9 +14,15 @@ pub struct Tracker {
     parser: Parser,
 }
 
+fn format_duration(duration: &Duration) -> String {
+    let hours = duration.num_hours();
+    let minutes = duration.num_minutes() - (hours * 60);
+    format!("{} hours {} minutes", hours, minutes)
+}
+
 impl Tracker {
     pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
-        let path_buf = week_tracker_file_create_if_needed(self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date)));
+        let path_buf = week_tracker_file_create_if_needed(self.week_tracker_file(date));
         let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
             panic!("Unexpected error reading document: {}", err);
         });
@@ -29,7 +35,7 @@ impl Tracker {
     }
 
     pub fn stop_tracking(&self, date: NaiveDate, time: NaiveTime) {
-        let path_buf = self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date));
+        let path_buf = self.week_tracker_file(date);
         let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
             panic!("Unexpected error reading document: {}", err);
         });
@@ -42,7 +48,7 @@ impl Tracker {
     }
 
     pub fn edit_file(&self, date: NaiveDate) {
-        let path = self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date));
+        let path = week_tracker_file_create_if_needed(self.week_tracker_file(date));
 
         let editor = env::var("EDITOR").unwrap();   
         Command::new(editor)
@@ -52,12 +58,16 @@ impl Tracker {
     }
 
     pub fn show_report(&self, now: NaiveDateTime) {
-        let path = week_tracker_file_for_date_create_if_needed(now.date());
+        let path = week_tracker_file_create_if_needed(self.week_tracker_file(now.date()));
         let result = fs::read_to_string(path);
         match result {
             Ok(content) => self.show_report_of_content(content, now),
             Err(err) => eprintln!("Error: {}", err)
         }
+    }
+
+    fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
+        self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date))
     }
 
     fn read_document(&self, path: &Path) -> io::Result<Document> {
@@ -70,7 +80,8 @@ impl Tracker {
     fn show_report_of_content(&self, content: String, now: NaiveDateTime) {
         let document = self.parser.parse_document(&content);
         let report = Report::from_document(&document, &now);
-        println!("{:?}", report);
+        println!("You have worked {} today.", format_duration(&report.duration_today));
+        println!("You have worked {} this week.", format_duration(&report.duration_week));
     }
 
     pub fn document_with_tracking_started(&self, document: &Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
@@ -120,11 +131,6 @@ impl Tracker {
 }
 
 // Week tracker file
-
-fn week_tracker_file_for_date_create_if_needed(date: NaiveDate) -> PathBuf {
-    let path = week_tracker_file_for_date(date);
-    return week_tracker_file_create_if_needed(path);
-}
 
 fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
     // Create parents if needed

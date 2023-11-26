@@ -11,28 +11,31 @@ pub struct Report {
     pub is_ongoing: bool
 }
 
+fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
+    match line {
+        Line::ClosedShift { start_time, stop_time } => {
+            stop_time.signed_duration_since(*start_time)
+        },
+        Line::OpenShift { start_time } => {
+            now.map(|now| now.time().signed_duration_since(*start_time)).unwrap_or_else(|| Duration::zero())
+        },
+        Line::SpecialShift { start_time, stop_time, .. } => {
+            stop_time.signed_duration_since(*start_time)
+        },
+        Line::SpecialDay { .. } => Duration::hours(8),
+        _ => Duration::zero(),        
+    }
+}
+
 fn duration_for_day(day: &Day) -> Duration {
     day.lines.iter().fold(Duration::hours(0), |acc, line| {
-        match line {
-            Line::ClosedShift { start_time, stop_time } => {
-                acc + stop_time.signed_duration_since(*start_time)
-            },
-            _ => acc
-        }
+        acc + duration_for_line(line, None)
     })
 }
 
 fn duration_for_today(day: &Day, now: &NaiveDateTime) -> Duration {
     day.lines.iter().fold(Duration::hours(0), |acc, line| {
-        match line {
-            Line::ClosedShift { start_time, stop_time } => {
-                acc + stop_time.signed_duration_since(*start_time)
-            },
-            Line::OpenShift { start_time } => {
-                acc + now.time().signed_duration_since(*start_time)
-            },
-            _ => acc
-        }
+        acc + duration_for_line(line, Some(*now))
     })
 }
 
@@ -96,6 +99,99 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::hours(4),
                 duration_week: chrono::Duration::hours(4),
+                is_ongoing: false
+            },
+            Report::from_document(&document, &now)
+        )
+    }
+
+    #[test]
+    fn special_days_are_counted() {
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: naive_date(2021, 1, 1),
+                    lines: vec![
+                        Line::SpecialDay { text: String::from("vacation") },
+                    ]
+                }
+            ]
+        );
+        let now = naive_date_time(2021, 1, 1, 12, 0);
+        assert_eq!(
+            Report {
+                duration_today: chrono::Duration::hours(8),
+                duration_week: chrono::Duration::hours(8),
+                is_ongoing: false
+            },
+            Report::from_document(&document, &now)
+        )
+    }
+
+    #[test]
+    fn special_shifts_are_counted() {
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: naive_date(2021, 1, 1),
+                    lines: vec![
+                        Line::SpecialShift { 
+                            text: String::from("vacation"), 
+                            start_time: naive_time(11, 10), 
+                            stop_time: naive_time(11, 50)
+                         }
+                    ]
+                }
+            ]
+        );
+        let now = naive_date_time(2021, 1, 1, 12, 0);
+        assert_eq!(
+            Report {
+                duration_today: chrono::Duration::minutes(40),
+                duration_week: chrono::Duration::minutes(40),
+                is_ongoing: false
+            },
+            Report::from_document(&document, &now)
+        )
+    }
+
+    #[test]
+    fn shifts_are_summed_correctly() {
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: naive_date(2021, 1, 1),
+                    lines: vec![
+                        Line::SpecialShift { 
+                            text: String::from("vacation"), 
+                            start_time: naive_time(11, 10), 
+                            stop_time: naive_time(11, 50)
+                         },
+                         Line::ClosedShift { 
+                            start_time: naive_time(13, 5), 
+                            stop_time: naive_time(13, 10) 
+                        }
+                    ]
+                },
+                Day {
+                    date: naive_date(2021, 1, 2),
+                    lines: vec![
+                        Line::ClosedShift { 
+                            start_time: naive_time(8, 0), 
+                            stop_time: naive_time(12, 0) 
+                        }
+                    ]
+                }
+            ]
+        );
+        let now = naive_date_time(2021, 1, 2, 12, 0);
+        assert_eq!(
+            Report {
+                duration_today: chrono::Duration::hours(4),
+                duration_week: chrono::Duration::minutes(285),
                 is_ongoing: false
             },
             Report::from_document(&document, &now)
