@@ -77,9 +77,10 @@ impl Tracker {
         }
         if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
             println!("Found day: {:?}", day);
-            return Ok(document.clone())
+            return Ok(document
+                .replacing_day(date, day.closing_shift(time)))
         }
-        return Ok(document.inserting_day(Day::create(date, vec![OpenShift {start_time: time}])));
+        return Err(DocumentError::TrackerFileDoesNotHaveOpenShift);
     }
 }
 
@@ -366,6 +367,47 @@ mod tests {
             time(12, 0, 0)
         );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn we_can_stop_a_shift() {
+        let tracker = Tracker::new();
+        let document = Document::new(
+            vec![],
+            vec![
+                Day {
+                    date: date(2019, 12, 2),
+                    lines: vec![
+                        Line::OpenShift { 
+                            start_time: time(10, 0, 0)
+                        }
+                    ]
+                },
+            ]
+        );
+        let new_document = tracker.document_with_tracking_stopped(
+            &document,
+            date(2019, 12, 2),
+            time(12, 0, 0)
+        ).unwrap();
+
+        assert_eq!(
+            Document::new(
+                vec![],
+                vec![
+                    Day {
+                        date: date(2019, 12, 2),
+                        lines: vec![
+                            Line::ClosedShift { 
+                                start_time: time(10, 0, 0),
+                                stop_time: time(12, 0, 0)
+                            }
+                        ]
+                    },
+                ]
+            ),
+            new_document
+        );
     }
 
 }

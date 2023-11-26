@@ -72,6 +72,27 @@ impl Day {
         }
     }
 
+    pub fn closing_shift(&self, closing_time: NaiveTime) -> Self {
+        let open_shift_count = self.lines.iter().filter(|line| matches!(line, OpenShift {..})).count();
+        if open_shift_count == 0 {
+            panic!("No open shift to close!");
+        }
+        if open_shift_count > 1 {
+            panic!("More than one open shift to close!");
+        }
+        let lines: Vec<Line> = self.lines.iter().map(|line| {
+            match line {
+                OpenShift { start_time } => ClosedShift { start_time: *start_time, stop_time: closing_time },
+                _ => line.clone()
+            }
+        }).collect();
+
+        Day {
+            date: self.date.clone(),
+            lines: lines
+        }
+    }
+
     pub fn create(date: NaiveDate, lines: Vec<Line>) -> Self {
         Day {
             date: date,
