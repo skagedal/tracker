@@ -3,10 +3,11 @@ mod tracker;
 mod report;
 mod testutils;
 
-use std::path::PathBuf;
+use std::{path::PathBuf, io};
 
 use chrono::Local;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, CommandFactory};
+use clap_complete::{Shell, generate};
 use crate::tracker::Tracker;
 
 /// Track work time
@@ -30,7 +31,11 @@ enum Commands {
     /// Edit tracking file
     Edit,
     /// Show a report
-    Report
+    Report,
+    /// Generate command-line completions
+    Completions {
+        shell: Shell
+    }
 }
 
 fn main() {
@@ -41,6 +46,7 @@ fn main() {
         Some(Commands::Stop) => stop_tracking(tracker),
         Some(Commands::Edit) => edit_file(tracker),
         Some(Commands::Report) => show_report(tracker),
+        Some(Commands::Completions { shell }) => generate_completions(shell),
         None => println!("No commmand!")
     }
 }
@@ -76,3 +82,7 @@ fn show_report(tracker: Tracker) {
     tracker.show_report(now);
 }
 
+fn generate_completions(shell: Shell) {
+    let mut cmd = Args::command();
+    generate(shell, &mut cmd, "tracker", &mut io::stdout());
+}

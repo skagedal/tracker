@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "*", features = ["derive"] }
+clap_complete = "*"
 chrono = "*"
 regex = "*"
 dirs = "*"
