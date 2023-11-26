@@ -1,5 +1,7 @@
+use std::env;
 use std::fs::{OpenOptions};
 use std::io::Write;
+use std::process::Command;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 use chrono::{NaiveDate, NaiveTime};
@@ -36,6 +38,16 @@ impl Tracker {
             .expect("Stop tracking failed");
         fs::write(path_buf.as_path(), new_document.to_string())
             .expect("Could not write document to file");
+    }
+
+    pub fn edit_file(&self, date: NaiveDate) {
+        let path = self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date));
+
+        let editor = env::var("EDITOR").unwrap();   
+        Command::new(editor)
+            .arg(&path)
+            .status()
+            .expect("Could not open editor");
     }
 
     pub fn show_report(&self, date: NaiveDate) {

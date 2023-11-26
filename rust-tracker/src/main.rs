@@ -1,5 +1,3 @@
-// We shall read the file
-
 mod document;
 mod tracker;
 
@@ -13,7 +11,7 @@ use crate::tracker::Tracker;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Sets a custom week file 
+    /// Set a custom week file 
     #[arg(short, long, value_name = "WEEKFILE")]
     weekfile: Option<PathBuf>,
 
@@ -39,15 +37,10 @@ fn main() {
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),
         Some(Commands::Stop) => stop_tracking(tracker),
-        Some(Commands::Edit) => edit_file(),
+        Some(Commands::Edit) => edit_file(tracker),
         Some(Commands::Report) => show_report(tracker),
         None => println!("No commmand!")
     }
-}
-
-fn edit_file() {
-    println!("Let's edit file!");
-    todo!()
 }
 
 // Commands
@@ -66,6 +59,13 @@ fn stop_tracking(tracker: Tracker) {
     let time = now.naive_local().time();
 
     tracker.stop_tracking(date, time);
+}
+
+fn edit_file(tracker: Tracker) {
+    let now = Local::now();
+    let date = now.naive_local().date();
+
+    tracker.edit_file(date);
 }
 
 fn show_report(tracker: Tracker) {
