@@ -1,10 +1,11 @@
 mod document;
 mod tracker;
 mod report;
+mod testutils;
 
 use std::path::PathBuf;
 
-use chrono::{Local};
+use chrono::Local;
 use clap::{Parser, Subcommand};
 use crate::tracker::Tracker;
 
