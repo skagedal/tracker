@@ -1,6 +1,6 @@
-use chrono::{NaiveDate, NaiveTime, Datelike};
+use chrono::{NaiveDate, NaiveTime, Datelike, Duration};
 use regex::{Regex, Captures};
-use crate::document::Line::{Blank, ClosedShift, Comment, DayHeader, OpenShift, SpecialDay, SpecialShift};
+use crate::document::Line::{Blank, ClosedShift, Comment, DayHeader, OpenShift, DurationShift, SpecialDay, SpecialShift};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Line {
@@ -16,6 +16,10 @@ pub enum Line {
     ClosedShift {
         start_time: NaiveTime,
         stop_time: NaiveTime,
+    },
+    DurationShift {
+        text: String,
+        duration: Duration
     },
     SpecialDay {
         text: String
@@ -41,6 +45,7 @@ impl ToString for Line {
             DayHeader { date } => format!("[{} {}]", "foobar", date),
             OpenShift { start_time } => format!("* {}-{}", start_time.format("%H:%M"), ""),
             ClosedShift { start_time, stop_time } => format!("* {}-{}", start_time.format("%H:%M"), stop_time.format("%H:%M")),
+            DurationShift { text, duration } => format!("* {} {}h {}m", text, duration.num_hours(), duration.num_minutes()),
             SpecialDay { text } => format!("* {}", text),
             SpecialShift { text, start_time, stop_time } => format!("* {} {}-{}", text, start_time.format("%H:%M"), stop_time.format("%H:%M")),
             Blank => String::from("")
@@ -208,6 +213,7 @@ pub struct Parser {
     day_header_regex: Regex,
     open_shift_regex: Regex,
     closed_shift_regex: Regex,
+    duration_shift_regex: Regex,
     special_shift_regex: Regex,
     special_day_regex: Regex,
     blank_regex: Regex,
@@ -228,6 +234,7 @@ impl Parser {
             day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]$").unwrap(),
             open_shift_regex: Regex::new(r"^\* (?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})-$").unwrap(),
             closed_shift_regex: Regex::new(r"^\* (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
+            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)").unwrap(),
             special_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+) (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
             special_day_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)$").unwrap(),
             blank_regex: Regex::new(r"^\s*$").unwrap(),
@@ -284,6 +291,13 @@ impl Parser {
                 0
             ).unwrap()
         })
+    }
+
+    fn parse_duration_shift(self: &Self, string: &str) -> Option<Line> {
+        self.duration_shift_regex.captures(string).map(|m| DurationShift {
+            text: String::from(m.name("text").unwrap().as_str()),
+            duration: Duration::hours(8)
+        }
     }
 
     fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
