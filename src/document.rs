@@ -45,7 +45,7 @@ impl ToString for Line {
             DayHeader { date } => format!("[{} {}]", "foobar", date),
             OpenShift { start_time } => format!("* {}-{}", start_time.format("%H:%M"), ""),
             ClosedShift { start_time, stop_time } => format!("* {}-{}", start_time.format("%H:%M"), stop_time.format("%H:%M")),
-            DurationShift { text, duration } => format!("* {} {}h {}m", text, duration.num_hours(), duration.num_minutes()),
+            DurationShift { text, duration } => format!("* {} {}h {}m", text, duration.num_hours(), duration.num_minutes() - duration.num_hours() * 60),
             SpecialDay { text } => format!("* {}", text),
             SpecialShift { text, start_time, stop_time } => format!("* {} {}-{}", text, start_time.format("%H:%M"), stop_time.format("%H:%M")),
             Blank => String::from("")
@@ -227,6 +227,10 @@ fn get_u32(m: &Captures, name: &str) -> u32 {
     m.name(name).unwrap().as_str().parse::<u32>().unwrap()
 }
 
+fn get_i64(m: &Captures, name: &str) -> i64 {
+    m.name(name).unwrap().as_str().parse::<i64>().unwrap()
+}
+
 impl Parser {
     pub fn new() -> Self {
         Parser {
@@ -234,7 +238,7 @@ impl Parser {
             day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]$").unwrap(),
             open_shift_regex: Regex::new(r"^\* (?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})-$").unwrap(),
             closed_shift_regex: Regex::new(r"^\* (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
-            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)").unwrap(),
+            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s+(?P<hours>[0-9])+\s*h\s+(?P<minutes>[0-9]+)\s*m$").unwrap(),
             special_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+) (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
             special_day_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)$").unwrap(),
             blank_regex: Regex::new(r"^\s*$").unwrap(),
@@ -247,6 +251,7 @@ impl Parser {
             .or_else(|| self.parse_open_shift(string))
             .or_else(|| self.parse_closed_shift(string))
             .or_else(|| self.parse_special_shift(string))
+            .or_else(|| self.parse_duration_shift(string))
             .or_else(|| self.parse_special_day(string))
             .or_else(|| self.parse_blank(string))
             .or_else(|| None)
@@ -296,8 +301,11 @@ impl Parser {
     fn parse_duration_shift(self: &Self, string: &str) -> Option<Line> {
         self.duration_shift_regex.captures(string).map(|m| DurationShift {
             text: String::from(m.name("text").unwrap().as_str()),
-            duration: Duration::hours(8)
-        }
+            duration: Duration::minutes(
+                get_i64(&m, "hours") * 60 + 
+                get_i64(&m, "minutes")
+            )
+        })
     }
 
     fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
@@ -368,8 +376,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use crate::document::{Parser, Document, Day};
-    use crate::document::Line::{Comment, SpecialDay, Blank, ClosedShift, SpecialShift, OpenShift, DayHeader};
-    use chrono::{NaiveDate, NaiveTime};
+    use crate::document::Line::{Comment, SpecialDay, Blank, ClosedShift, SpecialShift, OpenShift, DurationShift, DayHeader};
+    use chrono::{NaiveDate, NaiveTime, Duration};
 
     #[test]
     fn read_line() {
@@ -457,7 +465,12 @@ mod tests {
     fn example_1_document() -> Document {
         Document {
             preamble: vec![
-                Comment { text: String::from("Preamble") }
+                Comment { text: String::from("Preamble") },
+                DurationShift { 
+                    text: String::from("carry"),
+                    duration: Duration::minutes(70)
+                },
+                Blank
             ],
             days: vec![
                 Day {
@@ -525,6 +538,8 @@ mod tests {
 
     fn example_1_text() -> String {
         String::from("# Preamble
+* carry 1h 10m
+
 [monday 2020-07-13]
 * Vacation
 # Came back from Jämtland
