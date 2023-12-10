@@ -52,7 +52,7 @@ impl Report {
         Report {
             duration_today,
             duration_week,
-            is_ongoing: false
+            is_ongoing: this_day.map(Day::has_open_shift).unwrap_or_else(|| false)
         }
     }
 }

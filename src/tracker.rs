@@ -80,7 +80,12 @@ impl Tracker {
     fn show_report_of_content(&self, content: String, now: NaiveDateTime) {
         let document = self.parser.parse_document(&content);
         let report = Report::from_document(&document, &now);
-        println!("You have worked {} today.", format_duration(&report.duration_today));
+        print!("You have worked {} today", format_duration(&report.duration_today));
+        if report.is_ongoing {
+            println!(", ongoing.")
+        } else {
+            println!(".")
+        }
         println!("You have worked {} this week.", format_duration(&report.duration_week));
     }
 
