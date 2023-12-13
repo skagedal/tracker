@@ -1,6 +1,6 @@
-use std::ops::Add;
+use std::ops::{Add, Sub};
 
-use chrono::{Duration, NaiveDateTime};
+use chrono::{Duration, NaiveDateTime, Datelike};
 
 use crate::document::{Document, Line, Day};
 
@@ -8,7 +8,8 @@ use crate::document::{Document, Line, Day};
 pub struct Report {
     pub duration_today: Duration,
     pub duration_week: Duration,
-    pub is_ongoing: bool
+    pub is_ongoing: bool,
+    pub balance: Duration
 }
 
 fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
@@ -49,10 +50,16 @@ impl Report {
                 acc + duration_for_day(day)
             })
             .add(duration_today);
+        let expected_duration_so_far_week = Duration::hours(((now.weekday().num_days_from_monday() + 1) * 8).into());
+        let incoming_balance: Duration = document.preamble.iter().filter_map(|d| match d {
+            Line::DurationShift { text: _, duration } => Some(duration),
+            _ => None
+        }).sum();
         Report {
             duration_today,
             duration_week,
-            is_ongoing: false
+            is_ongoing: this_day.map(Day::has_open_shift).unwrap_or_else(|| false),
+            balance: duration_week.sub(expected_duration_so_far_week).add(incoming_balance)
         }
     }
 }
@@ -72,7 +79,8 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::hours(0),
                 duration_week: chrono::Duration::hours(0),
-                is_ongoing: false
+                is_ongoing: false,
+                balance: chrono::Duration::hours(0)
             },
             Report::from_document(&document, &now)
         )
@@ -99,7 +107,8 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::hours(4),
                 duration_week: chrono::Duration::hours(4),
-                is_ongoing: false
+                is_ongoing: false,
+                balance: chrono::Duration::hours(-4)
             },
             Report::from_document(&document, &now)
         )
@@ -123,7 +132,8 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::hours(8),
                 duration_week: chrono::Duration::hours(8),
-                is_ongoing: false
+                is_ongoing: false,
+                balance: chrono::Duration::hours(0)
             },
             Report::from_document(&document, &now)
         )
@@ -151,7 +161,8 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::minutes(40),
                 duration_week: chrono::Duration::minutes(40),
-                is_ongoing: false
+                is_ongoing: false,
+                balance: chrono::Duration::minutes(8 * 60 - 40)
             },
             Report::from_document(&document, &now)
         )
@@ -192,7 +203,8 @@ mod tests {
             Report {
                 duration_today: chrono::Duration::hours(4),
                 duration_week: chrono::Duration::minutes(285),
-                is_ongoing: false
+                is_ongoing: false,
+                balance: chrono::Duration::minutes(2*8*60 - 285)
             },
             Report::from_document(&document, &now)
         )
