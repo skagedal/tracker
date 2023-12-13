@@ -16,8 +16,8 @@ pub struct Tracker {
 
 fn format_duration(duration: &Duration) -> String {
     let hours = duration.num_hours();
-    let minutes = duration.num_minutes() - (hours * 60);
-    format!("{} hours {} minutes", hours, minutes)
+    let minutes = (duration.num_minutes() - (hours * 60)).abs();
+    format!("{} h {} m", hours, minutes)
 }
 
 impl Tracker {
@@ -87,6 +87,7 @@ impl Tracker {
             println!(".")
         }
         println!("You have worked {} this week.", format_duration(&report.duration_week));
+        println!("Balance: {}", format_duration(&report.balance))
     }
 
     pub fn document_with_tracking_started(&self, document: &Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
