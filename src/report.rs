@@ -1,8 +1,9 @@
-use std::ops::{Add, Sub};
+use std::{ops::{Add, Sub}, cmp::min};
 
 use chrono::{Duration, NaiveDateTime, Datelike};
 
 use crate::document::{Document, Line, Day};
+use crate::constants;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Report {
@@ -23,7 +24,7 @@ fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
         Line::SpecialShift { start_time, stop_time, .. } => {
             stop_time.signed_duration_since(*start_time)
         },
-        Line::SpecialDay { .. } => Duration::hours(8),
+        Line::SpecialDay { .. } => Duration::hours(constants::WORK_HOURS_PER_DAY.into()),
         _ => Duration::zero(),        
     }
 }
@@ -50,7 +51,8 @@ impl Report {
                 acc + duration_for_day(day)
             })
             .add(duration_today);
-        let expected_duration_so_far_week = Duration::hours(((now.weekday().num_days_from_monday() + 1) * 8).into());
+        let expected_days_so_far = min(now.weekday().num_days_from_monday() + 1, constants::WORK_DAYS_PER_WEEK);
+        let expected_duration_so_far_week = Duration::hours((expected_days_so_far * constants::WORK_HOURS_PER_DAY).into());
         let incoming_balance: Duration = document.preamble.iter().filter_map(|d| match d {
             Line::DurationShift { text: _, duration } => Some(duration),
             _ => None

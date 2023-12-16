@@ -1,6 +1,7 @@
 mod document;
 mod tracker;
 mod report;
+mod constants;
 mod testutils;
 
 use std::{path::PathBuf, io};
