@@ -57,11 +57,11 @@ impl Tracker {
             .expect("Could not open editor");
     }
 
-    pub fn show_report(&self, now: NaiveDateTime) {
+    pub fn show_report(&self, now: NaiveDateTime, is_working: bool) {
         let path = week_tracker_file_create_if_needed(self.week_tracker_file(now.date()));
         let result = fs::read_to_string(path);
         match result {
-            Ok(content) => self.show_report_of_content(content, now),
+            Ok(content) => self.process_report_of_content(content, now, is_working),
             Err(err) => eprintln!("Error: {}", err)
         }
     }
@@ -77,9 +77,17 @@ impl Tracker {
         }
     }
 
-    fn show_report_of_content(&self, content: String, now: NaiveDateTime) {
+    fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
         let document = self.parser.parse_document(&content);
         let report = Report::from_document(&document, &now);
+        if is_working {
+            let code = match report.is_ongoing {
+                true => 0,
+                false => 1,
+            };
+            std::process::exit(code);
+        }
+
         print!("You have worked {} today", format_duration(&report.duration_today));
         if report.is_ongoing {
             println!(", ongoing.")
