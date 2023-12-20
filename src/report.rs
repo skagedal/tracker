@@ -76,13 +76,13 @@ mod tests {
             vec![], 
             vec![]
         );
-        let now = naive_date_time(2021, 1, 1, 12, 0);
+        let now = naive_date_time(2023, 12, 18, 12, 0);
         assert_eq!(
             Report {
                 duration_today: chrono::Duration::hours(0),
                 duration_week: chrono::Duration::hours(0),
                 is_ongoing: false,
-                balance: chrono::Duration::hours(0)
+                balance: chrono::Duration::hours(-8)
             },
             Report::from_document(&document, &now)
         )
@@ -94,7 +94,7 @@ mod tests {
             vec![],
             vec![
                 Day {
-                    date: naive_date(2021, 1, 1),
+                    date: naive_date(2023, 12, 18), // a monday
                     lines: vec![
                         Line::ClosedShift {
                             start_time: naive_time(8, 0),
@@ -104,7 +104,7 @@ mod tests {
                 }
             ]
         );
-        let now = naive_date_time(2021, 1, 1, 12, 0);
+        let now = naive_date_time(2023, 12, 18, 12, 0);
         assert_eq!(
             Report {
                 duration_today: chrono::Duration::hours(4),
@@ -122,14 +122,14 @@ mod tests {
             vec![],
             vec![
                 Day {
-                    date: naive_date(2021, 1, 1),
+                    date: naive_date(2023, 12, 18), // a monday
                     lines: vec![
                         Line::SpecialDay { text: String::from("vacation") },
                     ]
                 }
             ]
         );
-        let now = naive_date_time(2021, 1, 1, 12, 0);
+        let now = naive_date_time(2023, 12, 18, 12, 0);
         assert_eq!(
             Report {
                 duration_today: chrono::Duration::hours(8),
@@ -147,7 +147,7 @@ mod tests {
             vec![],
             vec![
                 Day {
-                    date: naive_date(2021, 1, 1),
+                    date: naive_date(2023, 12, 18), // a monday
                     lines: vec![
                         Line::SpecialShift { 
                             text: String::from("vacation"), 
@@ -158,13 +158,13 @@ mod tests {
                 }
             ]
         );
-        let now = naive_date_time(2021, 1, 1, 12, 0);
+        let now = naive_date_time(2023, 12, 18, 12, 0);
         assert_eq!(
             Report {
                 duration_today: chrono::Duration::minutes(40),
                 duration_week: chrono::Duration::minutes(40),
                 is_ongoing: false,
-                balance: chrono::Duration::minutes(8 * 60 - 40)
+                balance: chrono::Duration::minutes(40 - 8 * 60)
             },
             Report::from_document(&document, &now)
         )
@@ -176,7 +176,7 @@ mod tests {
             vec![],
             vec![
                 Day {
-                    date: naive_date(2021, 1, 1),
+                    date: naive_date(2023, 12, 18), // a monday
                     lines: vec![
                         Line::SpecialShift { 
                             text: String::from("vacation"), 
@@ -190,7 +190,7 @@ mod tests {
                     ]
                 },
                 Day {
-                    date: naive_date(2021, 1, 2),
+                    date: naive_date(2023, 12, 19), // a tuesday
                     lines: vec![
                         Line::ClosedShift { 
                             start_time: naive_time(8, 0), 
@@ -200,13 +200,13 @@ mod tests {
                 }
             ]
         );
-        let now = naive_date_time(2021, 1, 2, 12, 0);
+        let now = naive_date_time(2023, 12, 19, 12, 0);
         assert_eq!(
             Report {
                 duration_today: chrono::Duration::hours(4),
                 duration_week: chrono::Duration::minutes(285),
                 is_ongoing: false,
-                balance: chrono::Duration::minutes(2*8*60 - 285)
+                balance: chrono::Duration::minutes(285 - 2*8*60)
             },
             Report::from_document(&document, &now)
         )
