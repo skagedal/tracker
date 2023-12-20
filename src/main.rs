@@ -33,6 +33,7 @@ enum Commands {
     Edit,
     /// Show a report
     Report {
+        #[arg(short, long)]
         is_working: bool
     },
     /// Generate command-line completions
