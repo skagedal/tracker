@@ -51,7 +51,7 @@ fn main() {
         Some(Commands::Edit) => edit_file(tracker),
         Some(Commands::Report { is_working }) => show_report(tracker, is_working),
         Some(Commands::Completions { shell }) => generate_completions(shell),
-        None => println!("No commmand!")
+        None => show_report(tracker, false)
     }
 }
 
