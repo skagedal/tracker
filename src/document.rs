@@ -1,17 +1,19 @@
-use chrono::{NaiveDate, NaiveTime, Datelike, Duration};
-use regex::{Regex, Captures};
-use crate::document::Line::{Blank, ClosedShift, Comment, DayHeader, OpenShift, DurationShift, SpecialDay, SpecialShift};
+use crate::document::Line::{
+    Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
+};
+use chrono::{Datelike, Duration, NaiveDate, NaiveTime};
+use regex::{Captures, Regex};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Line {
     Comment {
-        text: String
+        text: String,
     },
     DayHeader {
-        date: NaiveDate
+        date: NaiveDate,
     },
     OpenShift {
-        start_time: NaiveTime
+        start_time: NaiveTime,
     },
     ClosedShift {
         start_time: NaiveTime,
@@ -19,10 +21,10 @@ pub enum Line {
     },
     DurationShift {
         text: String,
-        duration: Duration
+        duration: Duration,
     },
     SpecialDay {
-        text: String
+        text: String,
     },
     SpecialShift {
         text: String,
@@ -34,7 +36,9 @@ pub enum Line {
 
 impl Line {
     fn is_shift(&self) -> bool {
-        return matches!(self, OpenShift {..}) || matches!(self, ClosedShift {..}) || matches!(self, SpecialShift {..})
+        return matches!(self, OpenShift { .. })
+            || matches!(self, ClosedShift { .. })
+            || matches!(self, SpecialShift { .. });
     }
 }
 
@@ -44,11 +48,32 @@ impl ToString for Line {
             Comment { text } => format!("# {}", text),
             DayHeader { date } => format!("[{} {}]", "foobar", date),
             OpenShift { start_time } => format!("* {}-{}", start_time.format("%H:%M"), ""),
-            ClosedShift { start_time, stop_time } => format!("* {}-{}", start_time.format("%H:%M"), stop_time.format("%H:%M")),
-            DurationShift { text, duration } => format!("* {} {}h {}m", text, duration.num_hours(), (duration.num_minutes() - duration.num_hours() * 60).abs()),
+            ClosedShift {
+                start_time,
+                stop_time,
+            } => format!(
+                "* {}-{}",
+                start_time.format("%H:%M"),
+                stop_time.format("%H:%M")
+            ),
+            DurationShift { text, duration } => format!(
+                "* {} {}h {}m",
+                text,
+                duration.num_hours(),
+                (duration.num_minutes() - duration.num_hours() * 60).abs()
+            ),
             SpecialDay { text } => format!("* {}", text),
-            SpecialShift { text, start_time, stop_time } => format!("* {} {}-{}", text, start_time.format("%H:%M"), stop_time.format("%H:%M")),
-            Blank => String::from("")
+            SpecialShift {
+                text,
+                start_time,
+                stop_time,
+            } => format!(
+                "* {} {}-{}",
+                text,
+                start_time.format("%H:%M"),
+                stop_time.format("%H:%M")
+            ),
+            Blank => String::from(""),
         }
     }
 }
@@ -61,47 +86,64 @@ pub struct Day {
 
 impl Day {
     pub fn has_open_shift(&self) -> bool {
-        return self.lines.iter().any(|line| matches!(line, OpenShift {..}))
+        return self
+            .lines
+            .iter()
+            .any(|line| matches!(line, OpenShift { .. }));
     }
 
     pub fn adding_shift(&self, line: Line) -> Self {
-        let before = self.lines.clone().into_iter().take_while(|line| line.is_shift());
-        let after = self.lines.clone().into_iter().skip_while(|line| line.is_shift());
-        let lines: Vec<Line> = before
-            .chain(vec![line].into_iter())
-            .chain(after)
-            .collect();
+        let before = self
+            .lines
+            .clone()
+            .into_iter()
+            .take_while(|line| line.is_shift());
+        let after = self
+            .lines
+            .clone()
+            .into_iter()
+            .skip_while(|line| line.is_shift());
+        let lines: Vec<Line> = before.chain(vec![line].into_iter()).chain(after).collect();
         Day {
             date: self.date.clone(),
-            lines: lines
+            lines: lines,
         }
     }
 
     pub fn closing_shift(&self, closing_time: NaiveTime) -> Self {
-        let open_shift_count = self.lines.iter().filter(|line| matches!(line, OpenShift {..})).count();
+        let open_shift_count = self
+            .lines
+            .iter()
+            .filter(|line| matches!(line, OpenShift { .. }))
+            .count();
         if open_shift_count == 0 {
             panic!("No open shift to close!");
         }
         if open_shift_count > 1 {
             panic!("More than one open shift to close!");
         }
-        let lines: Vec<Line> = self.lines.iter().map(|line| {
-            match line {
-                OpenShift { start_time } => ClosedShift { start_time: *start_time, stop_time: closing_time },
-                _ => line.clone()
-            }
-        }).collect();
+        let lines: Vec<Line> = self
+            .lines
+            .iter()
+            .map(|line| match line {
+                OpenShift { start_time } => ClosedShift {
+                    start_time: *start_time,
+                    stop_time: closing_time,
+                },
+                _ => line.clone(),
+            })
+            .collect();
 
         Day {
             date: self.date.clone(),
-            lines: lines
+            lines: lines,
         }
     }
 
     pub fn create(date: NaiveDate, lines: Vec<Line>) -> Self {
         Day {
             date: date,
-            lines: lines
+            lines: lines,
         }
     }
 }
@@ -141,8 +183,8 @@ impl Document {
     pub fn new(preamble: Vec<Line>, days: Vec<Day>) -> Self {
         return Document {
             preamble: preamble,
-            days: days
-        }
+            days: days,
+        };
     }
 
     pub fn empty() -> Self {
@@ -150,25 +192,27 @@ impl Document {
     }
 
     pub fn has_open_shift(&self) -> bool {
-        return self.days.iter().any(|day| day.has_open_shift())
+        return self.days.iter().any(|day| day.has_open_shift());
     }
 
     /// Returns the same document but with a certain day replaced
     pub fn replacing_day(&self, date: NaiveDate, day: Day) -> Self {
         Document {
             preamble: self.preamble.clone(),
-            days: self.days
+            days: self
+                .days
                 .iter()
                 .cloned()
                 .map(|d| if d.date.eq(&date) { day.clone() } else { d })
-                .collect()
+                .collect(),
         }
     }
 
     /// Returns the same document but with a certain day inserted in the right place.
     /// And with a blank line before it if needed.
     pub fn inserting_day(&self, day: Day) -> Self {
-        let mut days_before: Vec<Day> = self.days
+        let mut days_before: Vec<Day> = self
+            .days
             .iter()
             .cloned()
             .filter(|d| d.date < day.date)
@@ -177,8 +221,9 @@ impl Document {
         if number_of_days > 0 {
             days_before[number_of_days - 1].lines.push(Blank);
         }
-        let days_inbetween: Vec<Day> = vec!(day.clone());
-        let days_after: Vec<Day> = self.days
+        let days_inbetween: Vec<Day> = vec![day.clone()];
+        let days_after: Vec<Day> = self
+            .days
             .iter()
             .cloned()
             .filter(|d| d.date > day.date)
@@ -189,7 +234,7 @@ impl Document {
                 .into_iter()
                 .chain(days_inbetween.into_iter())
                 .chain(days_after.into_iter())
-                .collect()
+                .collect(),
         }
     }
 }
@@ -259,7 +304,7 @@ impl Parser {
 
     fn parse_comment(self: &Self, string: &str) -> Option<Line> {
         self.comment_regex.captures(string).map(|m| Comment {
-            text: String::from(m.name("text").unwrap().as_str())
+            text: String::from(m.name("text").unwrap().as_str()),
         })
     }
 
@@ -268,66 +313,73 @@ impl Parser {
             date: NaiveDate::from_ymd_opt(
                 get_i32(&m, "year"),
                 get_u32(&m, "month"),
-                get_u32(&m, "day")
-            ).unwrap()
+                get_u32(&m, "day"),
+            )
+            .unwrap(),
         })
     }
 
     fn parse_open_shift(self: &Self, string: &str) -> Option<Line> {
         self.open_shift_regex.captures(string).map(|m| OpenShift {
-            start_time: NaiveTime::from_hms_opt(
-                get_u32(&m, "hour"),
-                get_u32(&m, "minute"),
-                0
-            ).unwrap()
+            start_time: NaiveTime::from_hms_opt(get_u32(&m, "hour"), get_u32(&m, "minute"), 0)
+                .unwrap(),
         })
     }
 
     fn parse_closed_shift(self: &Self, string: &str) -> Option<Line> {
-        self.closed_shift_regex.captures(string).map(|m| ClosedShift {
-            start_time: NaiveTime::from_hms_opt(
-                get_u32(&m, "startHour"),
-                get_u32(&m, "startMinute"),
-                0
-            ).unwrap(),
-            stop_time: NaiveTime:: from_hms_opt(
-                get_u32(&m, "stopHour"),
-                get_u32(&m, "stopMinute"),
-                0
-            ).unwrap()
-        })
+        self.closed_shift_regex
+            .captures(string)
+            .map(|m| ClosedShift {
+                start_time: NaiveTime::from_hms_opt(
+                    get_u32(&m, "startHour"),
+                    get_u32(&m, "startMinute"),
+                    0,
+                )
+                .unwrap(),
+                stop_time: NaiveTime::from_hms_opt(
+                    get_u32(&m, "stopHour"),
+                    get_u32(&m, "stopMinute"),
+                    0,
+                )
+                .unwrap(),
+            })
     }
 
     fn parse_duration_shift(self: &Self, string: &str) -> Option<Line> {
-        self.duration_shift_regex.captures(string).map(|m| 
-            DurationShift {
-            text: String::from(m.name("text").unwrap().as_str()),
-            duration: Duration::minutes(
-                get_i64(&m, "hours") * 60 + 
-                get_i64(&m, "minutes") * get_i64(&m, "hours").signum()
-            )
-        })
+        self.duration_shift_regex
+            .captures(string)
+            .map(|m| DurationShift {
+                text: String::from(m.name("text").unwrap().as_str()),
+                duration: Duration::minutes(
+                    get_i64(&m, "hours") * 60
+                        + get_i64(&m, "minutes") * get_i64(&m, "hours").signum(),
+                ),
+            })
     }
 
     fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
-        self.special_shift_regex.captures(string).map(|m| SpecialShift {
-            text: String::from(m.name("text").unwrap().as_str()),
-            start_time: NaiveTime::from_hms_opt(
-                get_u32(&m, "startHour"),
-                get_u32(&m, "startMinute"),
-                0
-            ).unwrap(),
-            stop_time: NaiveTime:: from_hms_opt(
-                get_u32(&m, "stopHour"),
-                get_u32(&m, "stopMinute"),
-                0
-            ).unwrap()
-        })
+        self.special_shift_regex
+            .captures(string)
+            .map(|m| SpecialShift {
+                text: String::from(m.name("text").unwrap().as_str()),
+                start_time: NaiveTime::from_hms_opt(
+                    get_u32(&m, "startHour"),
+                    get_u32(&m, "startMinute"),
+                    0,
+                )
+                .unwrap(),
+                stop_time: NaiveTime::from_hms_opt(
+                    get_u32(&m, "stopHour"),
+                    get_u32(&m, "stopMinute"),
+                    0,
+                )
+                .unwrap(),
+            })
     }
 
     fn parse_special_day(self: &Self, string: &str) -> Option<Line> {
         self.special_day_regex.captures(string).map(|m| SpecialDay {
-            text: String::from(m.name("text").unwrap().as_str())
+            text: String::from(m.name("text").unwrap().as_str()),
         })
     }
 
@@ -337,7 +389,7 @@ impl Parser {
 
     pub fn parse_document(self: &Self, string: &str) -> Document {
         // Far from pretty, but works..
-        
+
         let mut preamble: Vec<Line> = Vec::new();
         let mut days: Vec<Day> = Vec::new();
         let mut current_date: Option<NaiveDate> = None;
@@ -347,78 +399,95 @@ impl Parser {
         for line in lines {
             match current_date {
                 Some(date) => match line {
-                    DayHeader {date: new_date } => {
+                    DayHeader { date: new_date } => {
                         let days_lines = current_day_lines.clone();
                         current_day_lines.clear();
-                        days.push(Day { date: date, lines: days_lines });
+                        days.push(Day {
+                            date: date,
+                            lines: days_lines,
+                        });
                         current_date = Some(new_date);
                     }
-                    _ => current_day_lines.push(line)
-                }
+                    _ => current_day_lines.push(line),
+                },
                 None => match line {
-                    DayHeader {date: new_date } => {
-                        current_date = Some(new_date)
-                    }
-                    _ => preamble.push(line)
-                }
+                    DayHeader { date: new_date } => current_date = Some(new_date),
+                    _ => preamble.push(line),
+                },
             }
         }
         match current_date {
-            Some(date) => days.push(Day { date: date, lines: current_day_lines }),
-            None => ()
+            Some(date) => days.push(Day {
+                date: date,
+                lines: current_day_lines,
+            }),
+            None => (),
         }
         Document {
             preamble: preamble,
-            days: days
+            days: days,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::document::{Parser, Document, Day};
-    use crate::document::Line::{Comment, SpecialDay, Blank, ClosedShift, SpecialShift, OpenShift, DurationShift, DayHeader};
-    use chrono::{NaiveDate, NaiveTime, Duration};
+    use crate::document::Line::{
+        Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
+    };
+    use crate::document::{Day, Document, Parser};
+    use chrono::{Duration, NaiveDate, NaiveTime};
 
     #[test]
     fn read_line() {
         let parser = Parser::new();
 
         assert_eq!(
-            Option::Some(Comment { text: String::from("hello") }),
+            Option::Some(Comment {
+                text: String::from("hello")
+            }),
             parser.parse_line("# hello")
         );
 
         assert_eq!(
-            Option::Some(DayHeader { date: NaiveDate::from_ymd_opt(2021, 9, 13).unwrap()}),
+            Option::Some(DayHeader {
+                date: NaiveDate::from_ymd_opt(2021, 9, 13).unwrap()
+            }),
             parser.parse_line("[monday 2021-09-13]")
         );
 
         assert_eq!(
-            Option::Some(OpenShift { start_time: time_hm(8, 12) }),
+            Option::Some(OpenShift {
+                start_time: time_hm(8, 12)
+            }),
             parser.parse_line("* 08:12-")
         );
 
         assert_eq!(
-            Option::Some(ClosedShift { start_time: time_hm(8, 24), stop_time: time_hm(9, 12)}),
+            Option::Some(ClosedShift {
+                start_time: time_hm(8, 24),
+                stop_time: time_hm(9, 12)
+            }),
             parser.parse_line("* 08:24-09:12")
         );
 
         assert_eq!(
-            Option::Some(SpecialDay { text: String::from("hello")}),
+            Option::Some(SpecialDay {
+                text: String::from("hello")
+            }),
             parser.parse_line("* hello")
         );
 
         assert_eq!(
-            Option::Some(SpecialShift { text: String::from("VAB"), start_time: time_hm(13, 5), stop_time: time_hm(20, 2)}),
+            Option::Some(SpecialShift {
+                text: String::from("VAB"),
+                start_time: time_hm(13, 5),
+                stop_time: time_hm(20, 2)
+            }),
             parser.parse_line("* VAB 13:05-20:02")
         );
 
-        assert_eq!(
-            Option::Some(Blank),
-            parser.parse_line("")
-        );
-
+        assert_eq!(Option::Some(Blank), parser.parse_line(""));
     }
 
     #[test]
@@ -443,14 +512,14 @@ mod tests {
     fn replacing_day_that_does_not_exist() {
         let document = Document {
             preamble: vec![],
-            days: vec![]
+            days: vec![],
         };
         let new_document = document.replacing_day(
             NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
             Day {
                 date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
-                lines: vec![]
-            }
+                lines: vec![],
+            },
         );
         assert_eq!(document, new_document)
     }
@@ -466,79 +535,84 @@ mod tests {
     fn example_1_document() -> Document {
         Document {
             preamble: vec![
-                Comment { text: String::from("Preamble") },
-                DurationShift { 
-                    text: String::from("carry"),
-                    duration: Duration::minutes(70)
+                Comment {
+                    text: String::from("Preamble"),
                 },
-                Blank
+                DurationShift {
+                    text: String::from("carry"),
+                    duration: Duration::minutes(70),
+                },
+                Blank,
             ],
             days: vec![
                 Day {
                     date: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap(),
                     lines: vec![
-                        SpecialDay { text: String::from("Vacation") },
-                        Comment { text: String::from("Came back from Jämtland")},
-                        Blank
-                    ]
+                        SpecialDay {
+                            text: String::from("Vacation"),
+                        },
+                        Comment {
+                            text: String::from("Came back from Jämtland"),
+                        },
+                        Blank,
+                    ],
                 },
                 Day {
                     date: NaiveDate::from_ymd_opt(2020, 7, 14).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(8, 32),
-                            stop_time: time_hm(12, 2)
+                            stop_time: time_hm(12, 2),
                         },
                         ClosedShift {
                             start_time: time_hm(12, 30),
-                            stop_time: time_hm(13, 1)
+                            stop_time: time_hm(13, 1),
                         },
                         ClosedShift {
                             start_time: time_hm(13, 45),
-                            stop_time: time_hm(18, 3)
+                            stop_time: time_hm(18, 3),
                         },
-                        Blank
-                    ]
+                        Blank,
+                    ],
                 },
                 Day {
                     date: NaiveDate::from_ymd_opt(2020, 7, 15).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(11, 0),
-                            stop_time: time_hm(18, 0)
+                            stop_time: time_hm(18, 0),
                         },
-                        Blank
-                    ]
+                        Blank,
+                    ],
                 },
                 Day {
                     date: NaiveDate::from_ymd_opt(2020, 7, 16).unwrap(),
                     lines: vec![
                         ClosedShift {
                             start_time: time_hm(8, 0),
-                            stop_time: time_hm(12, 0)
+                            stop_time: time_hm(12, 0),
                         },
                         SpecialShift {
                             text: String::from("VAB"),
                             start_time: time_hm(13, 0),
-                            stop_time: time_hm(17, 0)
+                            stop_time: time_hm(17, 0),
                         },
-                        Blank
-                    ]
+                        Blank,
+                    ],
                 },
                 Day {
                     date: NaiveDate::from_ymd_opt(2020, 7, 17).unwrap(),
-                    lines: vec![
-                        OpenShift {
-                            start_time: time_hm(8, 12)
-                        }
-                    ]
-                }
-            ]
+                    lines: vec![OpenShift {
+                        start_time: time_hm(8, 12),
+                    }],
+                },
+            ],
         }
     }
 
     fn example_1_text() -> String {
-        String::from("# Preamble
+        String::from(
+            "# Preamble
 * carry 1h 10m
 
 [monday 2020-07-13]
@@ -559,8 +633,7 @@ mod tests {
 
 [friday 2020-07-17]
 * 08:12-
-")
+",
+        )
     }
-
-
 }

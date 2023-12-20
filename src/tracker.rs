@@ -1,13 +1,13 @@
+use crate::document::Line::OpenShift;
+use crate::document::{Day, Document, Parser};
+use crate::report::Report;
+use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{fs, io};
-use std::path::{Path, PathBuf};
-use chrono::{NaiveDate, NaiveTime, NaiveDateTime, Duration};
-use crate::document::{Document, Parser, Day};
-use crate::document::Line::OpenShift;
-use crate::report::Report;
 
 pub struct Tracker {
     weekfile: Option<PathBuf>,
@@ -23,9 +23,11 @@ fn format_duration(duration: &Duration) -> String {
 impl Tracker {
     pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
         let path_buf = week_tracker_file_create_if_needed(self.week_tracker_file(date));
-        let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
-            panic!("Unexpected error reading document: {}", err);
-        });
+        let document = self
+            .read_document(path_buf.as_path())
+            .unwrap_or_else(|err| {
+                panic!("Unexpected error reading document: {}", err);
+            });
 
         let new_document = self
             .document_with_tracking_started(&document, date, time)
@@ -36,9 +38,11 @@ impl Tracker {
 
     pub fn stop_tracking(&self, date: NaiveDate, time: NaiveTime) {
         let path_buf = self.week_tracker_file(date);
-        let document = self.read_document(path_buf.as_path()).unwrap_or_else(|err| {
-            panic!("Unexpected error reading document: {}", err);
-        });
+        let document = self
+            .read_document(path_buf.as_path())
+            .unwrap_or_else(|err| {
+                panic!("Unexpected error reading document: {}", err);
+            });
 
         let new_document = self
             .document_with_tracking_stopped(&document, date, time)
@@ -50,7 +54,7 @@ impl Tracker {
     pub fn edit_file(&self, date: NaiveDate) {
         let path = week_tracker_file_create_if_needed(self.week_tracker_file(date));
 
-        let editor = env::var("EDITOR").unwrap();   
+        let editor = env::var("EDITOR").unwrap();
         Command::new(editor)
             .arg(&path)
             .status()
@@ -62,19 +66,21 @@ impl Tracker {
         let result = fs::read_to_string(path);
         match result {
             Ok(content) => self.process_report_of_content(content, now, is_working),
-            Err(err) => eprintln!("Error: {}", err)
+            Err(err) => eprintln!("Error: {}", err),
         }
     }
 
     fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
-        self.weekfile.clone().unwrap_or_else(|| week_tracker_file_for_date(date))
+        self.weekfile
+            .clone()
+            .unwrap_or_else(|| week_tracker_file_for_date(date))
     }
 
     fn read_document(&self, path: &Path) -> io::Result<Document> {
         return match fs::read_to_string(path) {
             Ok(content) => Result::Ok(self.parser.parse_document(&content)),
-            Err(err) => Result::Err(err)
-        }
+            Err(err) => Result::Err(err),
+        };
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
@@ -88,34 +94,51 @@ impl Tracker {
             std::process::exit(code);
         }
 
-        print!("You have worked {} today", format_duration(&report.duration_today));
+        print!(
+            "You have worked {} today",
+            format_duration(&report.duration_today)
+        );
         if report.is_ongoing {
             println!(", ongoing.")
         } else {
             println!(".")
         }
-        println!("You have worked {} this week.", format_duration(&report.duration_week));
+        println!(
+            "You have worked {} this week.",
+            format_duration(&report.duration_week)
+        );
         println!("Balance: {}", format_duration(&report.balance))
     }
 
-    pub fn document_with_tracking_started(&self, document: &Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
+    pub fn document_with_tracking_started(
+        &self,
+        document: &Document,
+        date: NaiveDate,
+        time: NaiveTime,
+    ) -> Result<Document, DocumentError> {
         if document.has_open_shift() {
-            return Err(DocumentError::TrackerFileAlreadyHasOpenShift)
+            return Err(DocumentError::TrackerFileAlreadyHasOpenShift);
         }
         if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
-            return Ok(document.replacing_day(date, day.adding_shift(OpenShift {start_time: time})))
+            return Ok(
+                document.replacing_day(date, day.adding_shift(OpenShift { start_time: time }))
+            );
         }
-        return Ok(document.inserting_day(Day::create(date, vec![OpenShift {start_time: time}])));
+        return Ok(document.inserting_day(Day::create(date, vec![OpenShift { start_time: time }])));
     }
 
-    pub fn document_with_tracking_stopped(&self, document: &Document, date: NaiveDate, time: NaiveTime) -> Result<Document, DocumentError> {
+    pub fn document_with_tracking_stopped(
+        &self,
+        document: &Document,
+        date: NaiveDate,
+        time: NaiveTime,
+    ) -> Result<Document, DocumentError> {
         if !document.has_open_shift() {
-            return Err(DocumentError::TrackerFileDoesNotHaveOpenShift)
+            return Err(DocumentError::TrackerFileDoesNotHaveOpenShift);
         }
         if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
             println!("Found day: {:?}", day);
-            return Ok(document
-                .replacing_day(date, day.closing_shift(time)))
+            return Ok(document.replacing_day(date, day.closing_shift(time)));
         }
         return Err(DocumentError::TrackerFileDoesNotHaveOpenShift);
     }
@@ -124,7 +147,7 @@ impl Tracker {
 #[derive(Debug, Clone)]
 pub enum DocumentError {
     TrackerFileAlreadyHasOpenShift,
-    TrackerFileDoesNotHaveOpenShift
+    TrackerFileDoesNotHaveOpenShift,
 }
 
 impl Tracker {
@@ -132,15 +155,15 @@ impl Tracker {
     pub fn new() -> Self {
         return Tracker {
             weekfile: None,
-            parser: Parser::new()
-        }
+            parser: Parser::new(),
+        };
     }
 
     pub fn new_with_weekfile(weekfile: Option<PathBuf>) -> Self {
         return Tracker {
             weekfile,
-            parser: Parser::new()
-        }
+            parser: Parser::new(),
+        };
     }
 }
 
@@ -152,26 +175,25 @@ fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
         fs::create_dir_all(parent_path).unwrap_or_else(|err| eprintln!("Error: {}", err));
     }
 
-    match OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&path) {
+    match OpenOptions::new().write(true).create_new(true).open(&path) {
         Ok(mut file) => {
             let empty = Document::empty();
-            file.write_all(empty.to_string().as_bytes()).expect("Could not write example document to file");
-        },
+            file.write_all(empty.to_string().as_bytes())
+                .expect("Could not write example document to file");
+        }
         Err(err) => {
             if err.kind() != io::ErrorKind::AlreadyExists {
                 eprintln!("Error: {}", err);
             }
         }
     }
-    
+
     return path;
 }
 
 fn week_tracker_file_for_date(date: NaiveDate) -> PathBuf {
-    dirs::home_dir().unwrap()
+    dirs::home_dir()
+        .unwrap()
         .join(".simons-assistant")
         .join("data")
         .join("tracker")
@@ -181,31 +203,25 @@ fn week_tracker_file_for_date(date: NaiveDate) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use crate::document::{Day, Document, Line};
-    use crate::Tracker;
     use crate::testutils::utils::{naive_date, naive_time};
+    use crate::Tracker;
 
     #[test]
     fn start_a_new_shift_in_empty_document() {
         let tracker = Tracker::new();
         let document = Document::empty();
-        let new_document = tracker.document_with_tracking_started(
-            &document,
-            naive_date(2019, 12, 3),
-            naive_time(8, 0)
-        ).unwrap();
+        let new_document = tracker
+            .document_with_tracking_started(&document, naive_date(2019, 12, 3), naive_time(8, 0))
+            .unwrap();
         assert_eq!(
             Document::new(
                 vec![],
-                vec![
-                    Day {
-                        date: naive_date(2019, 12, 3),
-                        lines: vec![
-                            Line::OpenShift {
-                                start_time: naive_time(8, 0)
-                            }
-                        ]
-                    }
-                ]
+                vec![Day {
+                    date: naive_date(2019, 12, 3),
+                    lines: vec![Line::OpenShift {
+                        start_time: naive_time(8, 0)
+                    }]
+                }]
             ),
             new_document
         )
@@ -216,23 +232,17 @@ mod tests {
         let tracker = Tracker::new();
         let document = Document::new(
             vec![],
-            vec![
-                Day {
-                    date: naive_date(2019, 12, 2),
-                    lines: vec![
-                        Line::ClosedShift { 
-                            start_time: naive_time(10, 0), 
-                            stop_time: naive_time(10, 30)
-                        }
-                    ]
-                }
-            ]
+            vec![Day {
+                date: naive_date(2019, 12, 2),
+                lines: vec![Line::ClosedShift {
+                    start_time: naive_time(10, 0),
+                    stop_time: naive_time(10, 30),
+                }],
+            }],
         );
-        let new_document = tracker.document_with_tracking_started(
-            &document,
-            naive_date(2019, 12, 3),
-            naive_time(8, 0)
-        ).unwrap();
+        let new_document = tracker
+            .document_with_tracking_started(&document, naive_date(2019, 12, 3), naive_time(8, 0))
+            .unwrap();
         assert_eq!(
             Document::new(
                 vec![],
@@ -240,8 +250,8 @@ mod tests {
                     Day {
                         date: naive_date(2019, 12, 2),
                         lines: vec![
-                            Line::ClosedShift { 
-                                start_time: naive_time(10, 0), 
+                            Line::ClosedShift {
+                                start_time: naive_time(10, 0),
                                 stop_time: naive_time(10, 30)
                             },
                             Line::Blank
@@ -249,11 +259,9 @@ mod tests {
                     },
                     Day {
                         date: naive_date(2019, 12, 3),
-                        lines: vec![
-                            Line::OpenShift {
-                                start_time: naive_time(8, 0)
-                            }
-                        ]
+                        lines: vec![Line::OpenShift {
+                            start_time: naive_time(8, 0)
+                        }]
                     }
                 ]
             ),
@@ -269,48 +277,40 @@ mod tests {
             vec![
                 Day {
                     date: naive_date(2019, 12, 2),
-                    lines: vec![
-                        Line::ClosedShift { 
-                            start_time: naive_time(10, 0), 
-                            stop_time: naive_time(10, 30)
-                        }
-                    ]
+                    lines: vec![Line::ClosedShift {
+                        start_time: naive_time(10, 0),
+                        stop_time: naive_time(10, 30),
+                    }],
                 },
                 Day {
                     date: naive_date(2019, 12, 3),
-                    lines: vec![
-                        Line::ClosedShift { 
-                            start_time: naive_time(11, 0), 
-                            stop_time: naive_time(11, 40) 
-                        }
-                    ]
-                }
-            ]
+                    lines: vec![Line::ClosedShift {
+                        start_time: naive_time(11, 0),
+                        stop_time: naive_time(11, 40),
+                    }],
+                },
+            ],
         );
-        let new_document = tracker.document_with_tracking_started(
-            &document,
-            naive_date(2019, 12, 3),
-            naive_time(12, 0)
-        ).unwrap();
+        let new_document = tracker
+            .document_with_tracking_started(&document, naive_date(2019, 12, 3), naive_time(12, 0))
+            .unwrap();
         assert_eq!(
             Document::new(
                 vec![],
                 vec![
                     Day {
                         date: naive_date(2019, 12, 2),
-                        lines: vec![
-                            Line::ClosedShift { 
-                                start_time: naive_time(10, 0), 
-                                stop_time: naive_time(10, 30)
-                            }
-                        ]
-                    },    
+                        lines: vec![Line::ClosedShift {
+                            start_time: naive_time(10, 0),
+                            stop_time: naive_time(10, 30)
+                        }]
+                    },
                     Day {
                         date: naive_date(2019, 12, 3),
                         lines: vec![
-                            Line::ClosedShift { 
-                                start_time: naive_time(11, 0), 
-                                stop_time: naive_time(11, 40) 
+                            Line::ClosedShift {
+                                start_time: naive_time(11, 0),
+                                stop_time: naive_time(11, 40)
                             },
                             Line::OpenShift {
                                 start_time: naive_time(12, 0)
@@ -328,43 +328,37 @@ mod tests {
         let tracker = Tracker::new();
         let document = Document::new(
             vec![],
-            vec![
-                Day {
-                    date: naive_date(2019, 12, 2),
-                    lines: vec![
-                        Line::ClosedShift { 
-                            start_time: naive_time(10, 0), 
-                            stop_time: naive_time(10, 30)
-                        },
-                        Line::Blank
-                    ]
-                },
-            ]
+            vec![Day {
+                date: naive_date(2019, 12, 2),
+                lines: vec![
+                    Line::ClosedShift {
+                        start_time: naive_time(10, 0),
+                        stop_time: naive_time(10, 30),
+                    },
+                    Line::Blank,
+                ],
+            }],
         );
-        let new_document = tracker.document_with_tracking_started(
-            &document,
-            naive_date(2019, 12, 2),
-            naive_time(12, 0)
-        ).unwrap();
+        let new_document = tracker
+            .document_with_tracking_started(&document, naive_date(2019, 12, 2), naive_time(12, 0))
+            .unwrap();
 
         assert_eq!(
             Document::new(
-                vec![], 
-                vec![
-                    Day {
-                        date: naive_date(2019, 12, 2),
-                        lines: vec![
-                            Line::ClosedShift { 
-                                start_time: naive_time(10, 0), 
-                                stop_time: naive_time(10, 30)
-                            },
-                            Line::OpenShift {
-                                start_time: naive_time(12, 0)
-                            },
-                            Line::Blank
-                        ]
-                    },
-                ]
+                vec![],
+                vec![Day {
+                    date: naive_date(2019, 12, 2),
+                    lines: vec![
+                        Line::ClosedShift {
+                            start_time: naive_time(10, 0),
+                            stop_time: naive_time(10, 30)
+                        },
+                        Line::OpenShift {
+                            start_time: naive_time(12, 0)
+                        },
+                        Line::Blank
+                    ]
+                },]
             ),
             new_document
         );
@@ -376,19 +370,15 @@ mod tests {
         let result = tracker.document_with_tracking_started(
             &Document::new(
                 vec![],
-                vec![
-                    Day {
-                        date: naive_date(2019, 12, 2),
-                        lines: vec![
-                            Line::OpenShift { 
-                                start_time: naive_time(10, 0)
-                            }
-                        ]
-                    },
-                ]
+                vec![Day {
+                    date: naive_date(2019, 12, 2),
+                    lines: vec![Line::OpenShift {
+                        start_time: naive_time(10, 0),
+                    }],
+                }],
             ),
             naive_date(2019, 12, 2),
-            naive_time(12, 0)
+            naive_time(12, 0),
         );
         assert!(result.is_err());
     }
@@ -398,40 +388,29 @@ mod tests {
         let tracker = Tracker::new();
         let document = Document::new(
             vec![],
-            vec![
-                Day {
-                    date: naive_date(2019, 12, 2),
-                    lines: vec![
-                        Line::OpenShift { 
-                            start_time: naive_time(10, 0)
-                        }
-                    ]
-                },
-            ]
+            vec![Day {
+                date: naive_date(2019, 12, 2),
+                lines: vec![Line::OpenShift {
+                    start_time: naive_time(10, 0),
+                }],
+            }],
         );
-        let new_document = tracker.document_with_tracking_stopped(
-            &document,
-            naive_date(2019, 12, 2),
-            naive_time(12, 0)
-        ).unwrap();
+        let new_document = tracker
+            .document_with_tracking_stopped(&document, naive_date(2019, 12, 2), naive_time(12, 0))
+            .unwrap();
 
         assert_eq!(
             Document::new(
                 vec![],
-                vec![
-                    Day {
-                        date: naive_date(2019, 12, 2),
-                        lines: vec![
-                            Line::ClosedShift { 
-                                start_time: naive_time(10, 0),
-                                stop_time: naive_time(12, 0)
-                            }
-                        ]
-                    },
-                ]
+                vec![Day {
+                    date: naive_date(2019, 12, 2),
+                    lines: vec![Line::ClosedShift {
+                        start_time: naive_time(10, 0),
+                        stop_time: naive_time(12, 0)
+                    }]
+                },]
             ),
             new_document
         );
     }
-
 }

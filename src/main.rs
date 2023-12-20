@@ -1,21 +1,21 @@
-mod document;
-mod tracker;
-mod report;
 mod constants;
+mod document;
+mod report;
 mod testutils;
+mod tracker;
 
-use std::{path::PathBuf, io};
+use std::{io, path::PathBuf};
 
-use chrono::Local;
-use clap::{Parser, Subcommand, CommandFactory};
-use clap_complete::{Shell, generate};
 use crate::tracker::Tracker;
+use chrono::Local;
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::{generate, Shell};
 
 /// Track work time
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Set a custom week file 
+    /// Set a custom week file
     #[arg(short, long, value_name = "WEEKFILE")]
     weekfile: Option<PathBuf>,
 
@@ -34,12 +34,10 @@ enum Commands {
     /// Show a report
     Report {
         #[arg(short, long)]
-        is_working: bool
+        is_working: bool,
     },
     /// Generate command-line completions
-    Completions {
-        shell: Shell
-    }
+    Completions { shell: Shell },
 }
 
 fn main() {
@@ -51,7 +49,7 @@ fn main() {
         Some(Commands::Edit) => edit_file(tracker),
         Some(Commands::Report { is_working }) => show_report(tracker, is_working),
         Some(Commands::Completions { shell }) => generate_completions(shell),
-        None => show_report(tracker, false)
+        None => show_report(tracker, false),
     }
 }
 
