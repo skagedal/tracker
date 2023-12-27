@@ -37,6 +37,7 @@ enum Commands {
     Edit,
     /// Show a report
     Report {
+        /// Only report with status code whether work is ongoing
         #[arg(short, long)]
         is_working: bool,
     },
