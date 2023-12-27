@@ -395,7 +395,10 @@ impl Parser {
         let mut current_date: Option<NaiveDate> = None;
         let mut current_day_lines: Vec<Line> = Vec::new();
 
-        let lines = string.lines().map(|l| self.parse_line(l).unwrap());
+        let lines = string.lines().enumerate().map(|(line_num, l)| {
+            self.parse_line(l)
+                .expect(format!("line {} could not be parsed: {}", line_num, l).as_str())
+        });
         for line in lines {
             match current_date {
                 Some(date) => match line {
