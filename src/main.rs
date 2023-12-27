@@ -15,8 +15,12 @@ use clap_complete::{generate, Shell};
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Set a custom week file
-    #[arg(short, long, value_name = "WEEKFILE")]
+    /// Use a custom week relative to the current
+    #[arg(short, long, value_name = "WEEK")]
+    week: Option<i32>,
+
+    /// Use a custom week file (takes precedence over week)
+    #[arg(short('f'), long, value_name = "WEEKFILE")]
     weekfile: Option<PathBuf>,
 
     #[clap(subcommand)]
@@ -42,7 +46,7 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    let tracker = Tracker::new_with_weekfile(args.weekfile);
+    let tracker = Tracker::new_with_options(args.weekfile, args.week);
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),
         Some(Commands::Stop) => stop_tracking(tracker),

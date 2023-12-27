@@ -11,6 +11,7 @@ use std::{fs, io};
 
 pub struct Tracker {
     weekfile: Option<PathBuf>,
+    weekdiff: Option<i32>,
     parser: Parser,
 }
 
@@ -73,7 +74,7 @@ impl Tracker {
     fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
         self.weekfile
             .clone()
-            .unwrap_or_else(|| week_tracker_file_for_date(date))
+            .unwrap_or_else(|| week_tracker_file_for_date(date, self.weekdiff))
     }
 
     fn read_document(&self, path: &Path) -> io::Result<Document> {
@@ -155,13 +156,15 @@ impl Tracker {
     pub fn new() -> Self {
         return Tracker {
             weekfile: None,
+            weekdiff: None,
             parser: Parser::new(),
         };
     }
 
-    pub fn new_with_weekfile(weekfile: Option<PathBuf>) -> Self {
+    pub fn new_with_options(weekfile: Option<PathBuf>, week: Option<i32>) -> Self {
         return Tracker {
             weekfile,
+            weekdiff: week,
             parser: Parser::new(),
         };
     }
@@ -191,7 +194,10 @@ fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
     return path;
 }
 
-fn week_tracker_file_for_date(date: NaiveDate) -> PathBuf {
+fn week_tracker_file_for_date(date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
+    let date = weekdiff
+        .map(|d| date + Duration::days(d as i64 * 7))
+        .unwrap_or(date);
     dirs::home_dir()
         .unwrap()
         .join(".simons-assistant")
