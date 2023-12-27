@@ -280,12 +280,12 @@ impl Parser {
     pub fn new() -> Self {
         Parser {
             comment_regex: Regex::new(r"^# (?P<text>.*)$").unwrap(),
-            day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]$").unwrap(),
-            open_shift_regex: Regex::new(r"^\* (?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})-$").unwrap(),
-            closed_shift_regex: Regex::new(r"^\* (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
-            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s+(?P<hours>-?[0-9])+\s*h\s+(?P<minutes>[0-9]+)\s*m$").unwrap(),
-            special_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+) (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})$").unwrap(),
-            special_day_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)$").unwrap(),
+            day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]\s*$").unwrap(),
+            open_shift_regex: Regex::new(r"^\* (?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})-\s*$").unwrap(),
+            closed_shift_regex: Regex::new(r"^\* (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})\s*$").unwrap(),
+            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s+(?P<hours>-?[0-9])+\s*h\s+(?P<minutes>[0-9]+)\s*m\s*$").unwrap(),
+            special_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+) (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})\s*$").unwrap(),
+            special_day_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s*$").unwrap(),
             blank_regex: Regex::new(r"^\s*$").unwrap(),
         }
     }
