@@ -1,12 +1,8 @@
-use std::{
-    cmp::min,
-    ops::{Add, Sub},
-};
-
-use chrono::{Datelike, Duration, NaiveDateTime};
+use std::ops::{Add, Sub};
 
 use crate::constants;
 use crate::document::{Day, Document, Line};
+use chrono::{Duration, IsoWeek, NaiveDate, NaiveDateTime};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Report {
@@ -47,6 +43,14 @@ fn duration_for_today(day: &Day, now: &NaiveDateTime) -> Duration {
     })
 }
 
+fn expected_days_worked(week: IsoWeek, now: &NaiveDateTime) -> u32 {
+    let now = now.date();
+    let monday_of_week =
+        NaiveDate::from_isoywd_opt(week.year(), week.week(), chrono::Weekday::Mon).unwrap();
+    let days_since = now.signed_duration_since(monday_of_week).num_days() + 1;
+    num::clamp(days_since as u32, 0, constants::WORK_DAYS_PER_WEEK)
+}
+
 impl Report {
     pub fn from_document(document: &Document, now: &NaiveDateTime) -> Report {
         let this_day = document.days.iter().find(|day| day.date == now.date());
@@ -59,10 +63,8 @@ impl Report {
             .filter(|day| day.date != now.date())
             .fold(Duration::hours(0), |acc, day| acc + duration_for_day(day))
             .add(duration_today);
-        let expected_days_so_far = min(
-            now.weekday().num_days_from_monday() + 1,
-            constants::WORK_DAYS_PER_WEEK,
-        );
+
+        let expected_days_so_far = expected_days_worked(document.week, now);
         let expected_duration_so_far_week =
             Duration::hours((expected_days_so_far * constants::WORK_HOURS_PER_DAY).into());
         let incoming_balance: Duration = document
