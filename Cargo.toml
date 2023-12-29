@@ -9,5 +9,5 @@ clap_complete = "*"
 chrono = "*"
 regex = "*"
 dirs = "*"
-num = "0.4.1"
+num-traits = "*"
 

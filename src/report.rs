@@ -48,7 +48,7 @@ fn expected_days_worked(week: IsoWeek, now: &NaiveDateTime) -> u32 {
     let monday_of_week =
         NaiveDate::from_isoywd_opt(week.year(), week.week(), chrono::Weekday::Mon).unwrap();
     let days_since = now.signed_duration_since(monday_of_week).num_days() + 1;
-    num::clamp(days_since as u32, 0, constants::WORK_DAYS_PER_WEEK)
+    num_traits::clamp(days_since as u32, 0, constants::WORK_DAYS_PER_WEEK)
 }
 
 impl Report {
