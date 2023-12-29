@@ -85,4 +85,4 @@ impl Report {
 }
 
 #[cfg(test)]
-mod tests;
+mod report_tests;
