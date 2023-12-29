@@ -3,7 +3,7 @@ use chrono::Datelike;
 use crate::{
     document::{Day, Document, Line},
     report::Report,
-    testutils::utils::{naive_date, naive_date_time, naive_time},
+    testutils::{naive_date, naive_date_time, naive_time},
 };
 
 #[test]

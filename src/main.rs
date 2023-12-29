@@ -1,8 +1,10 @@
 mod constants;
 mod document;
 mod report;
-mod testutils;
 mod tracker;
+
+#[cfg(test)]
+mod testutils;
 
 use std::{io, path::PathBuf};
 

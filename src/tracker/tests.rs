@@ -1,7 +1,7 @@
 use chrono::Datelike;
 
 use crate::document::{Day, Document, Line};
-use crate::testutils::utils::{naive_date, naive_time};
+use crate::testutils::{naive_date, naive_time};
 use crate::Tracker;
 
 #[test]
