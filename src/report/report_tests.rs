@@ -1,15 +1,15 @@
-use chrono::Datelike;
+use chrono::{Datelike, NaiveDate};
 
 use crate::{
     document::{Day, Document, Line},
     report::Report,
-    testutils::{naive_date, naive_date_time, naive_time},
+    testutils::{iso_date, iso_week, naive_date, naive_date_time, naive_time},
 };
 
 #[test]
 fn empty_report() {
     let now = naive_date_time(2023, 12, 18, 12, 0);
-    let week = now.iso_week();
+    let week = iso_week(2023, 51);
     let document = Document::new(week, vec![], vec![]);
     assert_eq!(
         Report {
@@ -25,7 +25,7 @@ fn empty_report() {
 #[test]
 fn simple_report() {
     let document = Document::new(
-        naive_date(2023, 12, 18).iso_week(),
+        iso_week(2023, 51),
         vec![],
         vec![Day {
             date: naive_date(2023, 12, 18), // a monday
@@ -133,6 +133,41 @@ fn shifts_are_summed_correctly() {
             duration_week: chrono::Duration::minutes(285),
             is_ongoing: false,
             balance: chrono::Duration::minutes(285 - 2 * 8 * 60)
+        },
+        Report::from_document(&document, &now)
+    )
+}
+
+#[test]
+fn report_for_earlier_week() {
+    fn day(date: NaiveDate) -> Day {
+        Day {
+            date,
+            lines: vec![Line::ClosedShift {
+                start_time: naive_time(8, 0),
+                stop_time: naive_time(16, 0),
+            }],
+        }
+    }
+    let document = Document::new(
+        iso_week(2023, 50),
+        vec![],
+        vec![
+            day(iso_date(2023, 50, chrono::Weekday::Mon)),
+            day(iso_date(2023, 50, chrono::Weekday::Tue)),
+            day(iso_date(2023, 50, chrono::Weekday::Wed)),
+            day(iso_date(2023, 50, chrono::Weekday::Thu)),
+            day(iso_date(2023, 50, chrono::Weekday::Fri)),
+        ],
+    );
+    // Next week, on wednesday, we're viewing the report.
+    let now = naive_date_time(2023, 12, 20, 12, 0);
+    assert_eq!(
+        Report {
+            duration_today: chrono::Duration::hours(0),
+            duration_week: chrono::Duration::hours(40),
+            is_ongoing: false,
+            balance: chrono::Duration::hours(0)
         },
         Report::from_document(&document, &now)
     )
