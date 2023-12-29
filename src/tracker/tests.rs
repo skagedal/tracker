@@ -1,3 +1,5 @@
+use chrono::Datelike;
+
 use crate::document::{Day, Document, Line};
 use crate::testutils::utils::{naive_date, naive_time};
 use crate::Tracker;
@@ -5,12 +7,13 @@ use crate::Tracker;
 #[test]
 fn start_a_new_shift_in_empty_document() {
     let tracker = Tracker::new();
-    let document = Document::empty();
+    let document = Document::empty(naive_date(2019, 12, 3).iso_week());
     let new_document = tracker
         .document_with_tracking_started(&document, naive_date(2019, 12, 3), naive_time(8, 0))
         .unwrap();
     assert_eq!(
         Document::new(
+            naive_date(2019, 12, 3).iso_week(),
             vec![],
             vec![Day {
                 date: naive_date(2019, 12, 3),
@@ -27,6 +30,7 @@ fn start_a_new_shift_in_empty_document() {
 fn blank_line_is_created_before_inserted_date() {
     let tracker = Tracker::new();
     let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2019, 12, 2),
@@ -41,6 +45,7 @@ fn blank_line_is_created_before_inserted_date() {
         .unwrap();
     assert_eq!(
         Document::new(
+            naive_date(2019, 12, 2).iso_week(),
             vec![],
             vec![
                 Day {
@@ -69,6 +74,7 @@ fn blank_line_is_created_before_inserted_date() {
 fn can_start_a_shift_on_an_already_existing_date() {
     let tracker = Tracker::new();
     let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
         vec![],
         vec![
             Day {
@@ -92,6 +98,7 @@ fn can_start_a_shift_on_an_already_existing_date() {
         .unwrap();
     assert_eq!(
         Document::new(
+            naive_date(2019, 12, 2).iso_week(),
             vec![],
             vec![
                 Day {
@@ -123,6 +130,7 @@ fn can_start_a_shift_on_an_already_existing_date() {
 fn new_open_shifts_are_added_right_after_last_existing_shift() {
     let tracker = Tracker::new();
     let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2019, 12, 2),
@@ -141,6 +149,7 @@ fn new_open_shifts_are_added_right_after_last_existing_shift() {
 
     assert_eq!(
         Document::new(
+            naive_date(2019, 12, 2).iso_week(),
             vec![],
             vec![Day {
                 date: naive_date(2019, 12, 2),
@@ -165,6 +174,7 @@ fn we_can_not_start_a_shift_if_one_is_already_started() {
     let tracker = Tracker::new();
     let result = tracker.document_with_tracking_started(
         &Document::new(
+            naive_date(2019, 12, 2).iso_week(),
             vec![],
             vec![Day {
                 date: naive_date(2019, 12, 2),
@@ -183,6 +193,7 @@ fn we_can_not_start_a_shift_if_one_is_already_started() {
 fn we_can_stop_a_shift() {
     let tracker = Tracker::new();
     let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2019, 12, 2),
@@ -197,6 +208,7 @@ fn we_can_stop_a_shift() {
 
     assert_eq!(
         Document::new(
+            naive_date(2019, 12, 2).iso_week(),
             vec![],
             vec![Day {
                 date: naive_date(2019, 12, 2),

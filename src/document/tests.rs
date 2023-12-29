@@ -2,7 +2,7 @@ use crate::document::Line::{
     Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
 };
 use crate::document::{Day, Document, Parser};
-use chrono::{Duration, NaiveDate, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime};
 
 #[test]
 fn read_line() {
@@ -58,11 +58,12 @@ fn read_line() {
 
 #[test]
 fn deserialize() {
+    let week = example_1_week();
     let serialized_document = example_1_text();
     let document = example_1_document();
 
     let parser = Parser::new();
-    let parsed = parser.parse_document(&serialized_document);
+    let parsed = parser.parse_document(week, &serialized_document);
     assert_eq!(document, parsed)
 }
 
@@ -77,6 +78,7 @@ fn serialize() {
 #[test]
 fn replacing_day_that_does_not_exist() {
     let document = Document {
+        week: NaiveDate::from_ymd_opt(2020, 7, 13).unwrap().iso_week(),
         preamble: vec![],
         days: vec![],
     };
@@ -100,6 +102,7 @@ fn time_hm(hour: u32, minute: u32) -> NaiveTime {
 
 fn example_1_document() -> Document {
     Document {
+        week: example_1_week(),
         preamble: vec![
             Comment {
                 text: String::from("Preamble"),
@@ -174,6 +177,10 @@ fn example_1_document() -> Document {
             },
         ],
     }
+}
+
+fn example_1_week() -> IsoWeek {
+    NaiveDate::from_ymd_opt(2020, 7, 3).unwrap().iso_week()
 }
 
 fn example_1_text() -> String {

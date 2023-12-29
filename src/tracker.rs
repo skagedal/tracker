@@ -1,7 +1,7 @@
 use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
 use crate::report::Report;
-use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -23,9 +23,10 @@ fn format_duration(duration: &Duration) -> String {
 
 impl Tracker {
     pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
-        let path_buf = week_tracker_file_create_if_needed(self.week_tracker_file(date));
+        let path_buf =
+            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
         let document = self
-            .read_document(path_buf.as_path())
+            .read_document(date.iso_week(), path_buf.as_path())
             .unwrap_or_else(|err| {
                 panic!("Unexpected error reading document: {}", err);
             });
@@ -40,7 +41,7 @@ impl Tracker {
     pub fn stop_tracking(&self, date: NaiveDate, time: NaiveTime) {
         let path_buf = self.week_tracker_file(date);
         let document = self
-            .read_document(path_buf.as_path())
+            .read_document(date.iso_week(), path_buf.as_path())
             .unwrap_or_else(|err| {
                 panic!("Unexpected error reading document: {}", err);
             });
@@ -53,7 +54,8 @@ impl Tracker {
     }
 
     pub fn edit_file(&self, date: NaiveDate) {
-        let path = week_tracker_file_create_if_needed(self.week_tracker_file(date));
+        let path =
+            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
 
         let editor = env::var("EDITOR").unwrap();
         Command::new(editor)
@@ -63,7 +65,8 @@ impl Tracker {
     }
 
     pub fn show_report(&self, now: NaiveDateTime, is_working: bool) {
-        let path = week_tracker_file_create_if_needed(self.week_tracker_file(now.date()));
+        let path =
+            week_tracker_file_create_if_needed(now.iso_week(), self.week_tracker_file(now.date()));
         let result = fs::read_to_string(path);
         match result {
             Ok(content) => self.process_report_of_content(content, now, is_working),
@@ -77,15 +80,15 @@ impl Tracker {
             .unwrap_or_else(|| week_tracker_file_for_date(date, self.weekdiff))
     }
 
-    fn read_document(&self, path: &Path) -> io::Result<Document> {
+    fn read_document(&self, week: IsoWeek, path: &Path) -> io::Result<Document> {
         return match fs::read_to_string(path) {
-            Ok(content) => Result::Ok(self.parser.parse_document(&content)),
+            Ok(content) => Result::Ok(self.parser.parse_document(week, &content)),
             Err(err) => Result::Err(err),
         };
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
-        let document = self.parser.parse_document(&content);
+        let document = self.parser.parse_document(now.iso_week(), &content);
         let report = Report::from_document(&document, &now);
         if is_working {
             let code = match report.is_ongoing {
@@ -172,7 +175,7 @@ impl Tracker {
 
 // Week tracker file
 
-fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
+fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
     // Create parents if needed
     if let Some(parent_path) = path.parent() {
         fs::create_dir_all(parent_path).unwrap_or_else(|err| eprintln!("Error: {}", err));
@@ -180,7 +183,7 @@ fn week_tracker_file_create_if_needed(path: PathBuf) -> PathBuf {
 
     match OpenOptions::new().write(true).create_new(true).open(&path) {
         Ok(mut file) => {
-            let empty = Document::empty();
+            let empty = Document::empty(week);
             file.write_all(empty.to_string().as_bytes())
                 .expect("Could not write example document to file");
         }

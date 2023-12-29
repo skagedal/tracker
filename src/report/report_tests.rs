@@ -1,3 +1,5 @@
+use chrono::Datelike;
+
 use crate::{
     document::{Day, Document, Line},
     report::Report,
@@ -6,8 +8,9 @@ use crate::{
 
 #[test]
 fn empty_report() {
-    let document = Document::new(vec![], vec![]);
     let now = naive_date_time(2023, 12, 18, 12, 0);
+    let week = now.iso_week();
+    let document = Document::new(week, vec![], vec![]);
     assert_eq!(
         Report {
             duration_today: chrono::Duration::hours(0),
@@ -22,6 +25,7 @@ fn empty_report() {
 #[test]
 fn simple_report() {
     let document = Document::new(
+        naive_date(2023, 12, 18).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2023, 12, 18), // a monday
@@ -46,6 +50,7 @@ fn simple_report() {
 #[test]
 fn special_days_are_counted() {
     let document = Document::new(
+        naive_date(2023, 12, 18).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2023, 12, 18), // a monday
@@ -69,6 +74,7 @@ fn special_days_are_counted() {
 #[test]
 fn special_shifts_are_counted() {
     let document = Document::new(
+        naive_date(2023, 12, 18).iso_week(),
         vec![],
         vec![Day {
             date: naive_date(2023, 12, 18), // a monday
@@ -94,6 +100,7 @@ fn special_shifts_are_counted() {
 #[test]
 fn shifts_are_summed_correctly() {
     let document = Document::new(
+        naive_date(2023, 12, 18).iso_week(),
         vec![],
         vec![
             Day {

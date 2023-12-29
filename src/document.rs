@@ -1,7 +1,7 @@
 use crate::document::Line::{
     Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
 };
-use chrono::{Datelike, Duration, NaiveDate, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime};
 use regex::{Captures, Regex};
 
 #[derive(PartialEq, Debug, Clone)]
@@ -175,20 +175,22 @@ impl ToString for Day {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Document {
+    pub week: IsoWeek,
     pub preamble: Vec<Line>,
     pub days: Vec<Day>,
 }
 
 impl Document {
-    pub fn new(preamble: Vec<Line>, days: Vec<Day>) -> Self {
+    pub fn new(week: IsoWeek, preamble: Vec<Line>, days: Vec<Day>) -> Self {
         return Document {
-            preamble: preamble,
-            days: days,
+            week,
+            preamble,
+            days,
         };
     }
 
-    pub fn empty() -> Self {
-        return Document::new(vec![], vec![]);
+    pub fn empty(week: IsoWeek) -> Self {
+        return Document::new(week, vec![], vec![]);
     }
 
     pub fn has_open_shift(&self) -> bool {
@@ -198,6 +200,7 @@ impl Document {
     /// Returns the same document but with a certain day replaced
     pub fn replacing_day(&self, date: NaiveDate, day: Day) -> Self {
         Document {
+            week: self.week,
             preamble: self.preamble.clone(),
             days: self
                 .days
@@ -229,6 +232,7 @@ impl Document {
             .filter(|d| d.date > day.date)
             .collect::<Vec<Day>>();
         Document {
+            week: self.week,
             preamble: self.preamble.clone(),
             days: days_before
                 .into_iter()
@@ -387,7 +391,7 @@ impl Parser {
         self.blank_regex.captures(string).map(|_| Blank)
     }
 
-    pub fn parse_document(self: &Self, string: &str) -> Document {
+    pub fn parse_document(self: &Self, week: IsoWeek, string: &str) -> Document {
         // Far from pretty, but works..
 
         let mut preamble: Vec<Line> = Vec::new();
@@ -427,6 +431,7 @@ impl Parser {
             None => (),
         }
         Document {
+            week,
             preamble: preamble,
             days: days,
         }
