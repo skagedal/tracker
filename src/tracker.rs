@@ -81,10 +81,10 @@ impl Tracker {
     }
 
     fn read_document(&self, week: IsoWeek, path: &Path) -> io::Result<Document> {
-        return match fs::read_to_string(path) {
+        match fs::read_to_string(path) {
             Ok(content) => Result::Ok(self.parser.parse_document(week, &content)),
             Err(err) => Result::Err(err),
-        };
+        }
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
@@ -128,7 +128,7 @@ impl Tracker {
                 document.replacing_day(date, day.adding_shift(OpenShift { start_time: time }))
             );
         }
-        return Ok(document.inserting_day(Day::create(date, vec![OpenShift { start_time: time }])));
+        Ok(document.inserting_day(Day::create(date, vec![OpenShift { start_time: time }])))
     }
 
     pub fn document_with_tracking_stopped(
@@ -144,7 +144,7 @@ impl Tracker {
             println!("Found day: {:?}", day);
             return Ok(document.replacing_day(date, day.closing_shift(time)));
         }
-        return Err(DocumentError::TrackerFileDoesNotHaveOpenShift);
+        Err(DocumentError::TrackerFileDoesNotHaveOpenShift)
     }
 }
 
@@ -165,11 +165,11 @@ impl Tracker {
     }
 
     pub fn new_with_options(weekfile: Option<PathBuf>, week: Option<i32>) -> Self {
-        return Tracker {
+        Tracker {
             weekfile,
             weekdiff: week,
             parser: Parser::new(),
-        };
+        }
     }
 }
 
@@ -194,7 +194,7 @@ fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
         }
     }
 
-    return path;
+    path
 }
 
 fn week_tracker_file_for_date(date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {

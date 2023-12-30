@@ -36,9 +36,9 @@ pub enum Line {
 
 impl Line {
     fn is_shift(&self) -> bool {
-        return matches!(self, OpenShift { .. })
+        matches!(self, OpenShift { .. })
             || matches!(self, ClosedShift { .. })
-            || matches!(self, SpecialShift { .. });
+            || matches!(self, SpecialShift { .. })
     }
 }
 
@@ -103,10 +103,10 @@ impl Day {
             .clone()
             .into_iter()
             .skip_while(|line| line.is_shift());
-        let lines: Vec<Line> = before.chain(vec![line].into_iter()).chain(after).collect();
+        let lines: Vec<Line> = before.chain(vec![line]).chain(after).collect();
         Day {
-            date: self.date.clone(),
-            lines: lines,
+            date: self.date,
+            lines,
         }
     }
 
@@ -135,15 +135,15 @@ impl Day {
             .collect();
 
         Day {
-            date: self.date.clone(),
-            lines: lines,
+            date: self.date,
+            lines,
         }
     }
 
     pub fn create(date: NaiveDate, lines: Vec<Line>) -> Self {
         Day {
-            date: date,
-            lines: lines,
+            date,
+            lines,
         }
     }
 }
@@ -164,10 +164,10 @@ impl ToString for Day {
     fn to_string(&self) -> String {
         let mut string = String::new();
         string.push_str(&format!("[{} {}]", format_weekday(self.date), self.date));
-        string.push_str("\n");
+        string.push('\n');
         for line in &self.lines {
             string.push_str(&line.to_string());
-            string.push_str("\n");
+            string.push('\n');
         }
         string
     }
@@ -182,15 +182,15 @@ pub struct Document {
 
 impl Document {
     pub fn new(week: IsoWeek, preamble: Vec<Line>, days: Vec<Day>) -> Self {
-        return Document {
+        Document {
             week,
             preamble,
             days,
-        };
+        }
     }
 
     pub fn empty(week: IsoWeek) -> Self {
-        return Document::new(week, vec![], vec![]);
+        Document::new(week, vec![], vec![])
     }
 
     pub fn has_open_shift(&self) -> bool {
@@ -216,9 +216,7 @@ impl Document {
     pub fn inserting_day(&self, day: Day) -> Self {
         let mut days_before: Vec<Day> = self
             .days
-            .iter()
-            .cloned()
-            .filter(|d| d.date < day.date)
+            .iter().filter(|&d| d.date < day.date).cloned()
             .collect::<Vec<Day>>();
         let number_of_days = days_before.len();
         if number_of_days > 0 {
@@ -227,17 +225,15 @@ impl Document {
         let days_inbetween: Vec<Day> = vec![day.clone()];
         let days_after: Vec<Day> = self
             .days
-            .iter()
-            .cloned()
-            .filter(|d| d.date > day.date)
+            .iter().filter(|&d| d.date > day.date).cloned()
             .collect::<Vec<Day>>();
         Document {
             week: self.week,
             preamble: self.preamble.clone(),
             days: days_before
                 .into_iter()
-                .chain(days_inbetween.into_iter())
-                .chain(days_after.into_iter())
+                .chain(days_inbetween)
+                .chain(days_after)
                 .collect(),
         }
     }
@@ -248,7 +244,7 @@ impl ToString for Document {
         let mut string = String::new();
         for line in &self.preamble {
             string.push_str(&line.to_string());
-            string.push_str("\n");
+            string.push('\n');
         }
         for day in &self.days {
             string.push_str(&day.to_string());
@@ -294,7 +290,7 @@ impl Parser {
         }
     }
 
-    fn parse_line(self: &Self, string: &str) -> Option<Line> {
+    fn parse_line(&self, string: &str) -> Option<Line> {
         self.parse_comment(string)
             .or_else(|| self.parse_day_header(string))
             .or_else(|| self.parse_open_shift(string))
@@ -303,16 +299,16 @@ impl Parser {
             .or_else(|| self.parse_duration_shift(string))
             .or_else(|| self.parse_special_day(string))
             .or_else(|| self.parse_blank(string))
-            .or_else(|| None)
+            .or(None)
     }
 
-    fn parse_comment(self: &Self, string: &str) -> Option<Line> {
+    fn parse_comment(&self, string: &str) -> Option<Line> {
         self.comment_regex.captures(string).map(|m| Comment {
             text: String::from(m.name("text").unwrap().as_str()),
         })
     }
 
-    fn parse_day_header(self: &Self, string: &str) -> Option<Line> {
+    fn parse_day_header(&self, string: &str) -> Option<Line> {
         self.day_header_regex.captures(string).map(|m| DayHeader {
             date: NaiveDate::from_ymd_opt(
                 get_i32(&m, "year"),
@@ -323,14 +319,14 @@ impl Parser {
         })
     }
 
-    fn parse_open_shift(self: &Self, string: &str) -> Option<Line> {
+    fn parse_open_shift(&self, string: &str) -> Option<Line> {
         self.open_shift_regex.captures(string).map(|m| OpenShift {
             start_time: NaiveTime::from_hms_opt(get_u32(&m, "hour"), get_u32(&m, "minute"), 0)
                 .unwrap(),
         })
     }
 
-    fn parse_closed_shift(self: &Self, string: &str) -> Option<Line> {
+    fn parse_closed_shift(&self, string: &str) -> Option<Line> {
         self.closed_shift_regex
             .captures(string)
             .map(|m| ClosedShift {
@@ -349,7 +345,7 @@ impl Parser {
             })
     }
 
-    fn parse_duration_shift(self: &Self, string: &str) -> Option<Line> {
+    fn parse_duration_shift(&self, string: &str) -> Option<Line> {
         self.duration_shift_regex
             .captures(string)
             .map(|m| DurationShift {
@@ -361,7 +357,7 @@ impl Parser {
             })
     }
 
-    fn parse_special_shift(self: &Self, string: &str) -> Option<Line> {
+    fn parse_special_shift(&self, string: &str) -> Option<Line> {
         self.special_shift_regex
             .captures(string)
             .map(|m| SpecialShift {
@@ -381,17 +377,17 @@ impl Parser {
             })
     }
 
-    fn parse_special_day(self: &Self, string: &str) -> Option<Line> {
+    fn parse_special_day(&self, string: &str) -> Option<Line> {
         self.special_day_regex.captures(string).map(|m| SpecialDay {
             text: String::from(m.name("text").unwrap().as_str()),
         })
     }
 
-    fn parse_blank(self: &Self, string: &str) -> Option<Line> {
+    fn parse_blank(&self, string: &str) -> Option<Line> {
         self.blank_regex.captures(string).map(|_| Blank)
     }
 
-    pub fn parse_document(self: &Self, week: IsoWeek, string: &str) -> Document {
+    pub fn parse_document(&self, week: IsoWeek, string: &str) -> Document {
         // Far from pretty, but works..
 
         let mut preamble: Vec<Line> = Vec::new();
@@ -401,7 +397,7 @@ impl Parser {
 
         let lines = string.lines().enumerate().map(|(line_num, l)| {
             self.parse_line(l)
-                .expect(format!("line {} could not be parsed: {}", line_num, l).as_str())
+                .unwrap_or_else(|| panic!("line {} could not be parsed: {}", line_num, l))
         });
         for line in lines {
             match current_date {
@@ -410,7 +406,7 @@ impl Parser {
                         let days_lines = current_day_lines.clone();
                         current_day_lines.clear();
                         days.push(Day {
-                            date: date,
+                            date,
                             lines: days_lines,
                         });
                         current_date = Some(new_date);
@@ -425,15 +421,15 @@ impl Parser {
         }
         match current_date {
             Some(date) => days.push(Day {
-                date: date,
+                date,
                 lines: current_day_lines,
             }),
             None => (),
         }
         Document {
             week,
-            preamble: preamble,
-            days: days,
+            preamble,
+            days,
         }
     }
 }

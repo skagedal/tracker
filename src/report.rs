@@ -20,7 +20,7 @@ fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
         } => stop_time.signed_duration_since(*start_time),
         Line::OpenShift { start_time } => now
             .map(|now| now.time().signed_duration_since(*start_time))
-            .unwrap_or_else(|| Duration::zero()),
+            .unwrap_or_else(Duration::zero),
         Line::SpecialShift {
             start_time,
             stop_time,
@@ -56,7 +56,7 @@ impl Report {
         let this_day = document.days.iter().find(|day| day.date == now.date());
         let duration_today = this_day
             .map(|day| duration_for_today(day, now))
-            .unwrap_or_else(|| Duration::zero());
+            .unwrap_or_else(Duration::zero);
         let duration_week = document
             .days
             .iter()
