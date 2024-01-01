@@ -141,10 +141,7 @@ impl Day {
     }
 
     pub fn create(date: NaiveDate, lines: Vec<Line>) -> Self {
-        Day {
-            date,
-            lines,
-        }
+        Day { date, lines }
     }
 }
 
@@ -216,7 +213,9 @@ impl Document {
     pub fn inserting_day(&self, day: Day) -> Self {
         let mut days_before: Vec<Day> = self
             .days
-            .iter().filter(|&d| d.date < day.date).cloned()
+            .iter()
+            .filter(|&d| d.date < day.date)
+            .cloned()
             .collect::<Vec<Day>>();
         let number_of_days = days_before.len();
         if number_of_days > 0 {
@@ -225,7 +224,9 @@ impl Document {
         let days_inbetween: Vec<Day> = vec![day.clone()];
         let days_after: Vec<Day> = self
             .days
-            .iter().filter(|&d| d.date > day.date).cloned()
+            .iter()
+            .filter(|&d| d.date > day.date)
+            .cloned()
             .collect::<Vec<Day>>();
         Document {
             week: self.week,
@@ -419,12 +420,11 @@ impl Parser {
                 },
             }
         }
-        match current_date {
-            Some(date) => days.push(Day {
+        if let Some(date) = current_date {
+            days.push(Day {
                 date,
                 lines: current_day_lines,
-            }),
-            None => (),
+            })
         }
         Document {
             week,
