@@ -194,6 +194,11 @@ impl Document {
         return self.days.iter().any(|day| day.has_open_shift());
     }
 
+    /// Find a day
+    pub fn get_day(&self, date: NaiveDate) -> Option<&Day> {
+        return self.days.iter().find(|d| d.date == date);
+    }
+
     /// Returns the same document but with a certain day replaced
     pub fn replacing_day(&self, date: NaiveDate, day: Day) -> Self {
         Document {

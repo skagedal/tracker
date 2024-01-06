@@ -31,10 +31,13 @@ impl Tracker {
                 panic!("Unexpected error reading document: {}", err);
             });
 
-        let new_document = self
+        let document = self
             .document_with_tracking_started(&document, date, time)
             .expect("Start tracking failed");
-        fs::write(path_buf.as_path(), new_document.to_string())
+
+        self.write_day_stdout(&document, date);
+
+        fs::write(path_buf.as_path(), document.to_string())
             .expect("Could not write document to file");
     }
 
@@ -46,10 +49,13 @@ impl Tracker {
                 panic!("Unexpected error reading document: {}", err);
             });
 
-        let new_document = self
+        let document = self
             .document_with_tracking_stopped(&document, date, time)
             .expect("Stop tracking failed");
-        fs::write(path_buf.as_path(), new_document.to_string())
+
+        self.write_day_stdout(&document, date);
+
+        fs::write(path_buf.as_path(), document.to_string())
             .expect("Could not write document to file");
     }
 
@@ -141,10 +147,16 @@ impl Tracker {
             return Err(DocumentError::TrackerFileDoesNotHaveOpenShift);
         }
         if let Some(day) = document.days.iter().find(|day| day.date.eq(&date)) {
-            println!("Found day: {:?}", day);
             return Ok(document.replacing_day(date, day.closing_shift(time)));
         }
         Err(DocumentError::TrackerFileDoesNotHaveOpenShift)
+    }
+
+    fn write_day_stdout(&self, document: &Document, date: NaiveDate) {
+        let day = document
+            .get_day(date)
+            .expect("this should be called right after day is modified");
+        print!("{}", day.to_string())
     }
 }
 
