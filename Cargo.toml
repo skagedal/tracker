@@ -8,6 +8,6 @@ clap = { version = "*", features = ["derive"] }
 clap_complete = "*"
 chrono = "*"
 regex = "*"
-dirs = "*"
+directories = "*"
 num-traits = "*"
 

@@ -1,6 +1,6 @@
 # tracker
 
-A simple command line program to help keep track of work time.
+A simple command line program to help keep track of work time, storing data in a simple per-week text file.
 
 Run `tracker start` to start working. It might look like this (I use `$` here to represent your shell prompt): 
 

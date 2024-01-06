@@ -2,6 +2,7 @@ use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
 use crate::report::Report;
 use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
+use directories::ProjectDirs;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -210,14 +211,15 @@ fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
 }
 
 fn week_tracker_file_for_date(date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
+    let proj_dirs = ProjectDirs::from("tech", "skagedal", "tracker").unwrap();
+
     let date = weekdiff
         .map(|d| date + Duration::days(d as i64 * 7))
         .unwrap_or(date);
-    dirs::home_dir()
-        .unwrap()
-        .join(".simons-assistant")
-        .join("data")
-        .join("tracker")
+
+    proj_dirs
+        .data_dir()
+        .join("week-files")
         .join(date.format("%Y-W%W.txt").to_string())
 }
 
