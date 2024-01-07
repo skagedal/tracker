@@ -4,7 +4,7 @@ A simple command line program to help keep track of work time, storing data in a
 
 Run `tracker start` to start working. It might look like this (I use `$` here to represent your shell prompt): 
 
-```bash
+```
 $ tracker start
 [monday 2024-01-08]
 * 08:28-
@@ -12,7 +12,7 @@ $ tracker start
 
 As you later end a shift, run `tracker stop`. 
 
-```bash
+```
 $ tracker stop
 [monday 2024-01-08]
 * 08:28-11:40
@@ -20,7 +20,7 @@ $ tracker stop
 
 Use `tracker report` to show your progress. 
 
-```bash
+```
 $ tracker report
 You have worked 3 h 12 m today.
 You have worked 3 h 12 m this week.
