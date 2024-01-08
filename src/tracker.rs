@@ -72,8 +72,10 @@ impl Tracker {
     }
 
     pub fn show_report(&self, now: NaiveDateTime, is_working: bool) {
-        let path =
-            week_tracker_file_create_if_needed(now.iso_week(), self.week_tracker_file(now.date()));
+        let path = week_tracker_file_create_if_needed(
+            self.active_week(now.date()),
+            self.week_tracker_file(now.date()),
+        );
         let result = fs::read_to_string(path);
         match result {
             Ok(content) => self.process_report_of_content(content, now, is_working),
@@ -95,7 +97,9 @@ impl Tracker {
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
-        let document = self.parser.parse_document(now.iso_week(), &content);
+        let document = self
+            .parser
+            .parse_document(self.active_week(now.date()), &content);
         let report = Report::from_document(&document, &now);
         if is_working {
             let code = match report.is_ongoing {
@@ -158,6 +162,13 @@ impl Tracker {
             .get_day(date)
             .expect("this should be called right after day is modified");
         print!("{}", day.to_string())
+    }
+
+    fn active_week(&self, date: NaiveDate) -> IsoWeek {
+        self.weekdiff
+            .map(|d| date + Duration::days(d as i64 * 7))
+            .unwrap_or(date)
+            .iso_week()
     }
 }
 

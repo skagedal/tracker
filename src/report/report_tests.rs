@@ -140,7 +140,7 @@ fn shifts_are_summed_correctly() {
 
 #[test]
 fn report_for_earlier_week() {
-    fn day(date: NaiveDate) -> Day {
+    fn full_day(date: NaiveDate) -> Day {
         Day {
             date,
             lines: vec![Line::ClosedShift {
@@ -153,15 +153,15 @@ fn report_for_earlier_week() {
         iso_week(2023, 50),
         vec![],
         vec![
-            day(iso_date(2023, 50, chrono::Weekday::Mon)),
-            day(iso_date(2023, 50, chrono::Weekday::Tue)),
-            day(iso_date(2023, 50, chrono::Weekday::Wed)),
-            day(iso_date(2023, 50, chrono::Weekday::Thu)),
-            day(iso_date(2023, 50, chrono::Weekday::Fri)),
+            full_day(iso_date(2023, 50, chrono::Weekday::Mon)),
+            full_day(iso_date(2023, 50, chrono::Weekday::Tue)),
+            full_day(iso_date(2023, 50, chrono::Weekday::Wed)),
+            full_day(iso_date(2023, 50, chrono::Weekday::Thu)),
+            full_day(iso_date(2023, 50, chrono::Weekday::Fri)),
         ],
     );
     // Next week, on wednesday, we're viewing the report.
-    let now = naive_date_time(2023, 12, 20, 12, 0);
+    let now = naive_date_time(2023, 12, 18, 12, 0);
     assert_eq!(
         Report {
             duration_today: chrono::Duration::hours(0),
