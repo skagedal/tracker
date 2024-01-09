@@ -161,7 +161,7 @@ fn report_for_earlier_week() {
         ],
     );
     // Next week, on wednesday, we're viewing the report.
-    let now = naive_date_time(2023, 12, 18, 12, 0);
+    let now = naive_date_time(2023, 12, 20, 12, 0);
     assert_eq!(
         Report {
             duration_today: chrono::Duration::hours(0),
