@@ -1,14 +1,6 @@
-mod constants;
-mod document;
-mod report;
-mod tracker;
-
-#[cfg(test)]
-mod testutils;
-
 use std::{io, path::PathBuf};
 
-use crate::tracker::Tracker;
+use ::tracker::tracker::Tracker;
 use chrono::Local;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
@@ -50,6 +42,7 @@ enum Commands {
 fn main() {
     let args = Args::parse();
     let tracker = Tracker::new_with_options(args.weekfile, args.week);
+
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),
         Some(Commands::Stop) => stop_tracking(tracker),

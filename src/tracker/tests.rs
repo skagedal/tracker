@@ -2,7 +2,7 @@ use chrono::Datelike;
 
 use crate::document::{Day, Document, Line};
 use crate::testutils::{naive_date, naive_time};
-use crate::Tracker;
+use crate::tracker::Tracker;
 
 #[test]
 fn start_a_new_shift_in_empty_document() {
