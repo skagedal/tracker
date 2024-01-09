@@ -75,6 +75,7 @@ impl Report {
                 _ => None,
             })
             .sum();
+
         Report {
             duration_today,
             duration_week,
