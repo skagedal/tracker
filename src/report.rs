@@ -64,8 +64,6 @@ impl Report {
             .fold(Duration::hours(0), |acc, day| acc + duration_for_day(day))
             .add(duration_today);
 
-        println!("document.week: {:?}", document.week);
-        println!("now: {}", now);
         let expected_days_so_far = expected_days_worked(document.week, now);
         let expected_duration_so_far_week =
             Duration::hours((expected_days_so_far * constants::WORK_HOURS_PER_DAY).into());
@@ -77,12 +75,7 @@ impl Report {
                 _ => None,
             })
             .sum();
-        println!("Duration week: {}", duration_week);
-        println!(
-            "Expected duration so far this week: {}",
-            expected_duration_so_far_week
-        );
-        println!("Incoming balance: {}", incoming_balance);
+
         Report {
             duration_today,
             duration_week,
