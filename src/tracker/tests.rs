@@ -6,7 +6,7 @@ use crate::tracker::Tracker;
 
 #[test]
 fn start_a_new_shift_in_empty_document() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let document = Document::empty(naive_date(2019, 12, 3).iso_week());
     let new_document = tracker
         .document_with_tracking_started(&document, naive_date(2019, 12, 3), naive_time(8, 0))
@@ -28,7 +28,7 @@ fn start_a_new_shift_in_empty_document() {
 
 #[test]
 fn blank_line_is_created_before_inserted_date() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let document = Document::new(
         naive_date(2019, 12, 2).iso_week(),
         vec![],
@@ -72,7 +72,7 @@ fn blank_line_is_created_before_inserted_date() {
 
 #[test]
 fn can_start_a_shift_on_an_already_existing_date() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let document = Document::new(
         naive_date(2019, 12, 2).iso_week(),
         vec![],
@@ -128,7 +128,7 @@ fn can_start_a_shift_on_an_already_existing_date() {
 
 #[test]
 fn new_open_shifts_are_added_right_after_last_existing_shift() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let document = Document::new(
         naive_date(2019, 12, 2).iso_week(),
         vec![],
@@ -171,7 +171,7 @@ fn new_open_shifts_are_added_right_after_last_existing_shift() {
 
 #[test]
 fn we_can_not_start_a_shift_if_one_is_already_started() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let result = tracker.document_with_tracking_started(
         &Document::new(
             naive_date(2019, 12, 2).iso_week(),
@@ -191,7 +191,7 @@ fn we_can_not_start_a_shift_if_one_is_already_started() {
 
 #[test]
 fn we_can_stop_a_shift() {
-    let tracker = Tracker::new();
+    let tracker = Tracker::builder().build();
     let document = Document::new(
         naive_date(2019, 12, 2).iso_week(),
         vec![],

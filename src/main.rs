@@ -41,7 +41,10 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    let tracker = Tracker::new_with_options(args.weekfile, args.week);
+    let tracker = Tracker::builder()
+        .weekfile(args.weekfile)
+        .weekdiff(args.week)
+        .build();
 
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),

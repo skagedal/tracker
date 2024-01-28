@@ -179,19 +179,32 @@ pub enum DocumentError {
 }
 
 impl Tracker {
-    #[cfg(test)]
-    pub fn new() -> Self {
-        return Tracker {
-            weekfile: None,
-            weekdiff: None,
-            parser: Parser::new(),
-        };
+    pub fn builder() -> TrackerBuilder {
+        TrackerBuilder::default()
+    }
+}
+
+#[derive(Default)]
+pub struct TrackerBuilder {
+    weekfile: Option<PathBuf>,
+    weekdiff: Option<i32>,
+}
+
+impl TrackerBuilder {
+    pub fn weekfile(mut self, weekfile: Option<PathBuf>) -> Self {
+        self.weekfile = weekfile;
+        self
     }
 
-    pub fn new_with_options(weekfile: Option<PathBuf>, week: Option<i32>) -> Self {
+    pub fn weekdiff(mut self, weekdiff: Option<i32>) -> Self {
+        self.weekdiff = weekdiff;
+        self
+    }
+
+    pub fn build(self) -> Tracker {
         Tracker {
-            weekfile,
-            weekdiff: week,
+            weekfile: self.weekfile,
+            weekdiff: self.weekdiff,
             parser: Parser::new(),
         }
     }
