@@ -96,11 +96,15 @@ impl Tracker {
         }
     }
 
-    fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
+    fn get_report(&self, content: String, now: NaiveDateTime) -> Report {
         let document = self
             .parser
             .parse_document(self.active_week(now.date()), &content);
-        let report = Report::from_document(&document, &now);
+        Report::from_document(&document, &now)
+    }
+
+    fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
+        let report = self.get_report(content, now);
         if is_working {
             let code = match report.is_ongoing {
                 true => 0,
