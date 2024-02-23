@@ -28,7 +28,11 @@ enum Commands {
     /// Stop tracking
     Stop,
     /// Edit tracking file
-    Edit,
+    Edit {
+        /// Only show path
+        #[arg(short, long)]
+        show_path: bool,
+    },
     /// Show a report
     Report {
         /// Only report with status code whether work is ongoing
@@ -49,7 +53,8 @@ fn main() {
     match args.command {
         Some(Commands::Start) => start_tracking(tracker),
         Some(Commands::Stop) => stop_tracking(tracker),
-        Some(Commands::Edit) => edit_file(tracker),
+        Some(Commands::Edit { show_path: true }) => show_weekfile_path(tracker),
+        Some(Commands::Edit { show_path: false }) => edit_file(tracker),
         Some(Commands::Report { is_working }) => show_report(tracker, is_working),
         Some(Commands::Completions { shell }) => generate_completions(shell),
         None => show_report(tracker, false),
@@ -72,6 +77,13 @@ fn stop_tracking(tracker: Tracker) {
     let time = now.naive_local().time();
 
     tracker.stop_tracking(date, time);
+}
+
+fn show_weekfile_path(tracker: Tracker) {
+    let now = Local::now();
+    let date = now.naive_local().date();
+
+    tracker.show_weekfile_path(date);
 }
 
 fn edit_file(tracker: Tracker) {

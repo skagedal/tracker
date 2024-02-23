@@ -60,6 +60,12 @@ impl Tracker {
             .expect("Could not write document to file");
     }
 
+    pub fn show_weekfile_path(&self, date: NaiveDate) {
+        let path =
+            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
+        println!("{}", path.display());
+    }
+
     pub fn edit_file(&self, date: NaiveDate) {
         let path =
             week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
