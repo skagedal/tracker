@@ -7,7 +7,8 @@ edition = "2021"
 clap = { version = "*", features = ["derive"] }
 clap_complete = "*"
 chrono = "*"
-regex = "*"
 directories = "*"
 num-traits = "*"
-
+regex = "*"
+serde = { version = "*", features = ["derive"] }
+toml = "*"
