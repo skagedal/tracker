@@ -11,4 +11,5 @@ directories = "*"
 num-traits = "*"
 regex = "*"
 serde = { version = "*", features = ["derive"] }
+temp-dir = "*"
 toml = "*"

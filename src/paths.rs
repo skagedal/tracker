@@ -16,6 +16,13 @@ impl TrackerDirs {
         }
     }
 
+    pub fn fixed(path: &Path) -> TrackerDirs {
+        TrackerDirs {
+            config_dir: path.join("config").to_path_buf(),
+            data_dir: path.join("data").to_path_buf(),
+        }
+    }
+
     pub fn config_dir(&self) -> &Path {
         self.config_dir.as_path()
     }
