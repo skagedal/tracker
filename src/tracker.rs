@@ -1,8 +1,8 @@
 use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
+use crate::paths::TrackerDirs;
 use crate::report::Report;
 use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
-use directories::ProjectDirs;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -15,6 +15,7 @@ pub struct Tracker {
     weekdiff: Option<i32>,
     parser: Parser,
     now: NaiveDateTime,
+    dirs: TrackerDirs,
 }
 
 fn format_duration(duration: &Duration) -> String {
@@ -100,7 +101,7 @@ impl Tracker {
     fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
         self.explicit_weekfile
             .clone()
-            .unwrap_or_else(|| week_tracker_file_for_date(date, self.weekdiff))
+            .unwrap_or_else(|| self.week_tracker_file_for_date(date, self.weekdiff))
     }
 
     fn read_document(&self, week: IsoWeek, path: &Path) -> io::Result<Document> {
@@ -188,6 +189,17 @@ impl Tracker {
             .unwrap_or(date)
             .iso_week()
     }
+
+    fn week_tracker_file_for_date(&self, date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
+        let date = weekdiff
+            .map(|d| date + Duration::days(d as i64 * 7))
+            .unwrap_or(date);
+
+        self.dirs
+            .data_dir()
+            .join("week-files")
+            .join(date.format("%Y-W%W.txt").to_string())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -197,8 +209,8 @@ pub enum DocumentError {
 }
 
 impl Tracker {
-    pub fn builder(now: NaiveDateTime) -> TrackerBuilder {
-        TrackerBuilder::default().now(now)
+    pub fn builder(now: NaiveDateTime, dirs: TrackerDirs) -> TrackerBuilder {
+        TrackerBuilder::default().now(now).dirs(dirs)
     }
 }
 
@@ -207,6 +219,7 @@ pub struct TrackerBuilder {
     explicit_weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
     now: Option<NaiveDateTime>,
+    dirs: Option<TrackerDirs>,
 }
 
 impl TrackerBuilder {
@@ -225,14 +238,18 @@ impl TrackerBuilder {
         self
     }
 
+    pub fn dirs(mut self, dirs: TrackerDirs) -> Self {
+        self.dirs = Some(dirs);
+        self
+    }
+
     pub fn build(self) -> Tracker {
         Tracker {
             explicit_weekfile: self.explicit_weekfile,
             weekdiff: self.weekdiff,
             parser: Parser::new(),
-            now: self
-                .now
-                .expect("tracker needs to be initialized with a now value"),
+            now: self.now.expect("now value required"),
+            dirs: self.dirs.expect("dirs value expected"),
         }
     }
 }
@@ -259,19 +276,6 @@ fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
     }
 
     path
-}
-
-fn week_tracker_file_for_date(date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
-    let proj_dirs = ProjectDirs::from("tech", "skagedal", "tracker").unwrap();
-
-    let date = weekdiff
-        .map(|d| date + Duration::days(d as i64 * 7))
-        .unwrap_or(date);
-
-    proj_dirs
-        .data_dir()
-        .join("week-files")
-        .join(date.format("%Y-W%W.txt").to_string())
 }
 
 #[cfg(test)]

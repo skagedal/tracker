@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use tracker::tracker::{Tracker, TrackerBuilder};
+use tracker::{
+    paths::TrackerDirs,
+    tracker::{Tracker, TrackerBuilder},
+};
 
 fn test_data() -> PathBuf {
     [env!("CARGO_MANIFEST_DIR"), "tests", "data"]
@@ -22,7 +25,7 @@ pub fn naive_time(hour: u32, minute: u32) -> NaiveTime {
 }
 
 fn build_tracker() -> TrackerBuilder {
-    Tracker::builder(naive_date_time(2023, 12, 2, 12, 0))
+    Tracker::builder(naive_date_time(2023, 12, 2, 12, 0), TrackerDirs::real())
 }
 
 #[test]

@@ -1,5 +1,6 @@
 use std::{io, path::PathBuf};
 
+use ::tracker::paths::TrackerDirs;
 use ::tracker::tracker::Tracker;
 use chrono::Local;
 use clap::{CommandFactory, Parser, Subcommand};
@@ -46,7 +47,8 @@ enum Commands {
 fn main() {
     let args = Args::parse();
     let now = Local::now().naive_local();
-    let tracker = Tracker::builder(now)
+    let dirs = TrackerDirs::real();
+    let tracker = Tracker::builder(now, dirs)
         .explicit_weekfile(args.explicit_weekfile)
         .weekdiff(args.week)
         .build();

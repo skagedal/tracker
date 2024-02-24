@@ -1,6 +1,7 @@
 use chrono::Datelike;
 
 use crate::document::{Day, Document, Line};
+use crate::paths::TrackerDirs;
 use crate::testutils::{naive_date, naive_date_time, naive_time};
 use crate::tracker::Tracker;
 
@@ -225,5 +226,5 @@ fn we_can_stop_a_shift() {
 }
 
 fn build_tracker() -> TrackerBuilder {
-    Tracker::builder(naive_date_time(2023, 12, 2, 12, 0))
+    Tracker::builder(naive_date_time(2023, 12, 2, 12, 0), TrackerDirs::real())
 }
