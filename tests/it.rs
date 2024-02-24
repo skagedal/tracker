@@ -33,7 +33,7 @@ fn read_file_and_report() {
     // You have worked 40 h 54 m this week.
     // Balance: 8 h 36 m
     let tracker = build_tracker()
-        .weekfile(Some(test_data().join("2024-W04.txt")))
+        .explicit_weekfile(Some(test_data().join("2024-W04.txt")))
         .build();
     tracker.show_report(false)
 }

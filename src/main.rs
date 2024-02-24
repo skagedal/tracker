@@ -14,8 +14,8 @@ struct Args {
     week: Option<i32>,
 
     /// Use a custom week file (takes precedence over week)
-    #[arg(short('f'), long, value_name = "WEEKFILE")]
-    weekfile: Option<PathBuf>,
+    #[arg(short('f'), long("weekfile"), value_name = "WEEKFILE")]
+    explicit_weekfile: Option<PathBuf>,
 
     #[clap(subcommand)]
     command: Option<Commands>,
@@ -47,7 +47,7 @@ fn main() {
     let args = Args::parse();
     let now = Local::now().naive_local();
     let tracker = Tracker::builder(now)
-        .weekfile(args.weekfile)
+        .explicit_weekfile(args.explicit_weekfile)
         .weekdiff(args.week)
         .build();
 

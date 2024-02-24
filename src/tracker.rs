@@ -11,7 +11,7 @@ use std::process::Command;
 use std::{fs, io};
 
 pub struct Tracker {
-    weekfile: Option<PathBuf>,
+    explicit_weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
     parser: Parser,
     now: NaiveDateTime,
@@ -98,7 +98,7 @@ impl Tracker {
     }
 
     fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
-        self.weekfile
+        self.explicit_weekfile
             .clone()
             .unwrap_or_else(|| week_tracker_file_for_date(date, self.weekdiff))
     }
@@ -204,14 +204,14 @@ impl Tracker {
 
 #[derive(Default)]
 pub struct TrackerBuilder {
-    weekfile: Option<PathBuf>,
+    explicit_weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
     now: Option<NaiveDateTime>,
 }
 
 impl TrackerBuilder {
-    pub fn weekfile(mut self, weekfile: Option<PathBuf>) -> Self {
-        self.weekfile = weekfile;
+    pub fn explicit_weekfile(mut self, explicit_weekfile: Option<PathBuf>) -> Self {
+        self.explicit_weekfile = explicit_weekfile;
         self
     }
 
@@ -227,7 +227,7 @@ impl TrackerBuilder {
 
     pub fn build(self) -> Tracker {
         Tracker {
-            weekfile: self.weekfile,
+            explicit_weekfile: self.explicit_weekfile,
             weekdiff: self.weekdiff,
             parser: Parser::new(),
             now: self
