@@ -14,6 +14,7 @@ pub struct Tracker {
     weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
     parser: Parser,
+    now: NaiveDateTime,
 }
 
 fn format_duration(duration: &Duration) -> String {
@@ -23,7 +24,9 @@ fn format_duration(duration: &Duration) -> String {
 }
 
 impl Tracker {
-    pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
+    pub fn start_tracking(&self) {
+        let date = self.now.date();
+        let time = self.now.time();
         let path_buf =
             week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
         let document = self
@@ -42,7 +45,9 @@ impl Tracker {
             .expect("Could not write document to file");
     }
 
-    pub fn stop_tracking(&self, date: NaiveDate, time: NaiveTime) {
+    pub fn stop_tracking(&self) {
+        let date = self.now.date();
+        let time = self.now.time();
         let path_buf = self.week_tracker_file(date);
         let document = self
             .read_document(date.iso_week(), path_buf.as_path())
@@ -60,15 +65,18 @@ impl Tracker {
             .expect("Could not write document to file");
     }
 
-    pub fn show_weekfile_path(&self, date: NaiveDate) {
+    pub fn show_weekfile_path(&self) {
+        let date = self.now.date();
         let path =
             week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
         println!("{}", path.display());
     }
 
-    pub fn edit_file(&self, date: NaiveDate) {
-        let path =
-            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
+    pub fn edit_file(&self) {
+        let path = week_tracker_file_create_if_needed(
+            self.now.iso_week(),
+            self.week_tracker_file(self.now.date()),
+        );
 
         let editor = env::var("EDITOR").unwrap();
         Command::new(editor)
@@ -77,14 +85,14 @@ impl Tracker {
             .expect("Could not open editor");
     }
 
-    pub fn show_report(&self, now: NaiveDateTime, is_working: bool) {
+    pub fn show_report(&self, is_working: bool) {
         let path = week_tracker_file_create_if_needed(
-            self.active_week(now.date()),
-            self.week_tracker_file(now.date()),
+            self.active_week(self.now.date()),
+            self.week_tracker_file(self.now.date()),
         );
         let result = fs::read_to_string(path);
         match result {
-            Ok(content) => self.process_report_of_content(content, now, is_working),
+            Ok(content) => self.process_report_of_content(content, self.now, is_working),
             Err(err) => eprintln!("Error: {}", err),
         }
     }
@@ -189,8 +197,8 @@ pub enum DocumentError {
 }
 
 impl Tracker {
-    pub fn builder() -> TrackerBuilder {
-        TrackerBuilder::default()
+    pub fn builder(now: NaiveDateTime) -> TrackerBuilder {
+        TrackerBuilder::default().now(now)
     }
 }
 
@@ -198,6 +206,7 @@ impl Tracker {
 pub struct TrackerBuilder {
     weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
+    now: Option<NaiveDateTime>,
 }
 
 impl TrackerBuilder {
@@ -211,11 +220,19 @@ impl TrackerBuilder {
         self
     }
 
+    pub fn now(mut self, now: NaiveDateTime) -> Self {
+        self.now = Some(now);
+        self
+    }
+
     pub fn build(self) -> Tracker {
         Tracker {
             weekfile: self.weekfile,
             weekdiff: self.weekdiff,
             parser: Parser::new(),
+            now: self
+                .now
+                .expect("tracker needs to be initialized with a now value"),
         }
     }
 }

@@ -45,58 +45,21 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    let tracker = Tracker::builder()
+    let now = Local::now().naive_local();
+    let tracker = Tracker::builder(now)
         .weekfile(args.weekfile)
         .weekdiff(args.week)
         .build();
 
     match args.command {
-        Some(Commands::Start) => start_tracking(tracker),
-        Some(Commands::Stop) => stop_tracking(tracker),
-        Some(Commands::Edit { show_path: true }) => show_weekfile_path(tracker),
-        Some(Commands::Edit { show_path: false }) => edit_file(tracker),
-        Some(Commands::Report { is_working }) => show_report(tracker, is_working),
+        Some(Commands::Start) => tracker.start_tracking(),
+        Some(Commands::Stop) => tracker.stop_tracking(),
+        Some(Commands::Edit { show_path: true }) => tracker.show_weekfile_path(),
+        Some(Commands::Edit { show_path: false }) => tracker.edit_file(),
+        Some(Commands::Report { is_working }) => tracker.show_report(is_working),
         Some(Commands::Completions { shell }) => generate_completions(shell),
-        None => show_report(tracker, false),
+        None => tracker.show_report(false),
     }
-}
-
-// Commands
-
-fn start_tracking(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-    let time = now.naive_local().time();
-
-    tracker.start_tracking(date, time);
-}
-
-fn stop_tracking(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-    let time = now.naive_local().time();
-
-    tracker.stop_tracking(date, time);
-}
-
-fn show_weekfile_path(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-
-    tracker.show_weekfile_path(date);
-}
-
-fn edit_file(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-
-    tracker.edit_file(date);
-}
-
-fn show_report(tracker: Tracker, is_working: bool) {
-    let now = Local::now().naive_local();
-
-    tracker.show_report(now, is_working);
 }
 
 fn generate_completions(shell: Shell) {
