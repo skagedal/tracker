@@ -58,7 +58,7 @@ Tracker will only look at the current week file when stating your report. If you
 
 This will add 3 hours and 12 minutes to the balance for the current week. 
 
-Such as balance shift is added automatically when you start a new week. 
+(Under development: Such as balance shift will be added automatically when you start a new week.)
 
 ## Installation
 
