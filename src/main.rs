@@ -61,7 +61,7 @@ fn main() {
                 std::process::exit(1);
             }
         };
-    // Now, we should actually use this config.
+
     let tracker = Tracker::builder(now, dirs)
         .config(config)
         .explicit_weekfile(args.explicit_weekfile)

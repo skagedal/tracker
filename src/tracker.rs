@@ -30,11 +30,15 @@ impl Tracker {
     pub fn start_tracking(&self) {
         let date = self.now.date();
         let time = self.now.time();
-        let path_buf = week_tracker_file_create_if_needed_with_transfer(
-            date.iso_week(),
-            self.week_tracker_file(date),
-            self.week_to_transfer_from(date),
-        );
+        let path_buf = if self.config.experimental_features.auto_transfer_balance {
+            week_tracker_file_create_if_needed_with_transfer(
+                date.iso_week(),
+                self.week_tracker_file(date),
+                self.week_to_transfer_from(date),
+            )
+        } else {
+            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date))
+        };
         let document = self
             .read_document(date.iso_week(), path_buf.as_path())
             .unwrap_or_else(|err| {

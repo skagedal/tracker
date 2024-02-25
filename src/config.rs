@@ -9,12 +9,15 @@ use crate::constants;
 pub struct Config {
     #[serde(default)]
     pub workweek: WorkWeekConfig,
+    #[serde(default)]
+    pub experimental_features: FeaturesConfig,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             workweek: WorkWeekConfig::default(),
+            experimental_features: FeaturesConfig::default(),
         }
     }
 }
@@ -43,6 +46,13 @@ fn default_days_per_week() -> u32 {
 
 fn default_hours_per_day() -> u32 {
     constants::DEFAULT_WORK_HOURS_PER_DAY
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub struct FeaturesConfig {
+    #[serde(default)]
+    pub auto_transfer_balance: bool,
 }
 
 #[derive(Debug)]
