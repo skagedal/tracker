@@ -5,6 +5,7 @@ use ::tracker::tracker::Tracker;
 use chrono::Local;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
+use tracker::config;
 
 /// Track work time
 #[derive(Parser, Debug)]
@@ -48,6 +49,19 @@ fn main() {
     let args = Args::parse();
     let now = Local::now().naive_local();
     let dirs = TrackerDirs::real();
+    let _config =
+        match config::read_config_from_path(&dirs.config_dir().to_path_buf().join("config.toml")) {
+            Ok(config) => config,
+            Err(config::ConfigError::OpenFile(path, err)) => {
+                eprintln!("Could not open config file at {}: {}", path.display(), err);
+                std::process::exit(1);
+            }
+            Err(config::ConfigError::InvalidFile(path, err)) => {
+                eprintln!("Invalid config file at {}: {}", path.display(), err);
+                std::process::exit(1);
+            }
+        };
+    // Now, we should actually use this config.
     let tracker = Tracker::builder(now, dirs)
         .explicit_weekfile(args.explicit_weekfile)
         .weekdiff(args.week)
