@@ -1,8 +1,9 @@
+use crate::config::Config;
 use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
+use crate::paths::TrackerDirs;
 use crate::report::Report;
 use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
-use directories::ProjectDirs;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -11,9 +12,12 @@ use std::process::Command;
 use std::{fs, io};
 
 pub struct Tracker {
-    weekfile: Option<PathBuf>,
+    explicit_weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
     parser: Parser,
+    now: NaiveDateTime,
+    dirs: TrackerDirs,
+    config: Config,
 }
 
 fn format_duration(duration: &Duration) -> String {
@@ -23,7 +27,9 @@ fn format_duration(duration: &Duration) -> String {
 }
 
 impl Tracker {
-    pub fn start_tracking(&self, date: NaiveDate, time: NaiveTime) {
+    pub fn start_tracking(&self) {
+        let date = self.now.date();
+        let time = self.now.time();
         let path_buf = week_tracker_file_create_if_needed_with_transfer(
             date.iso_week(),
             self.week_tracker_file(date),
@@ -45,7 +51,9 @@ impl Tracker {
             .expect("Could not write document to file");
     }
 
-    pub fn stop_tracking(&self, date: NaiveDate, time: NaiveTime) {
+    pub fn stop_tracking(&self) {
+        let date = self.now.date();
+        let time = self.now.time();
         let path_buf = self.week_tracker_file(date);
         let document = self
             .read_document(date.iso_week(), path_buf.as_path())
@@ -63,9 +71,18 @@ impl Tracker {
             .expect("Could not write document to file");
     }
 
-    pub fn edit_file(&self, date: NaiveDate) {
+    pub fn show_weekfile_path(&self) {
+        let date = self.now.date();
         let path =
             week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
+        println!("{}", path.display());
+    }
+
+    pub fn edit_file(&self) {
+        let path = week_tracker_file_create_if_needed(
+            self.now.iso_week(),
+            self.week_tracker_file(self.now.date()),
+        );
 
         let editor = env::var("EDITOR").unwrap();
         Command::new(editor)
@@ -74,27 +91,27 @@ impl Tracker {
             .expect("Could not open editor");
     }
 
-    pub fn show_report(&self, now: NaiveDateTime, is_working: bool) {
+    pub fn show_report(&self, is_working: bool) {
         let path = week_tracker_file_create_if_needed(
-            self.active_week(now.date()),
-            self.week_tracker_file(now.date()),
+            self.active_week(self.now.date()),
+            self.week_tracker_file(self.now.date()),
         );
         let result = fs::read_to_string(path);
         match result {
-            Ok(content) => self.process_report_of_content(content, now, is_working),
+            Ok(content) => self.process_report_of_content(content, self.now, is_working),
             Err(err) => eprintln!("Error: {}", err),
         }
     }
 
     fn week_tracker_file(&self, date: NaiveDate) -> PathBuf {
-        self.weekfile
+        self.explicit_weekfile
             .clone()
-            .unwrap_or_else(|| week_tracker_file_for_date(date, self.weekdiff))
+            .unwrap_or_else(|| self.week_tracker_file_for_date(date, self.weekdiff))
     }
 
     // transfer only happens from previous week when no explicit week file or week diff has been set
     fn week_to_transfer_from(&self, date: NaiveDate) -> Option<IsoWeek> {
-        if self.weekfile.is_none() && self.weekdiff.is_none() {
+        if self.explicit_weekfile.is_none() && self.weekdiff.is_none() {
             Some((date - Duration::days(7)).iso_week())
         } else {
             None
@@ -112,7 +129,7 @@ impl Tracker {
         let document = self
             .parser
             .parse_document(self.active_week(now.date()), &content);
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &self.config.workweek)
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
@@ -186,6 +203,17 @@ impl Tracker {
             .unwrap_or(date)
             .iso_week()
     }
+
+    fn week_tracker_file_for_date(&self, date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
+        let date = weekdiff
+            .map(|d| date + Duration::days(d as i64 * 7))
+            .unwrap_or(date);
+
+        self.dirs
+            .data_dir()
+            .join("week-files")
+            .join(date.format("%Y-W%W.txt").to_string())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -195,20 +223,23 @@ pub enum DocumentError {
 }
 
 impl Tracker {
-    pub fn builder() -> TrackerBuilder {
-        TrackerBuilder::default()
+    pub fn builder(now: NaiveDateTime, dirs: TrackerDirs) -> TrackerBuilder {
+        TrackerBuilder::default().now(now).dirs(dirs)
     }
 }
 
 #[derive(Default)]
 pub struct TrackerBuilder {
-    weekfile: Option<PathBuf>,
+    explicit_weekfile: Option<PathBuf>,
     weekdiff: Option<i32>,
+    now: Option<NaiveDateTime>,
+    dirs: Option<TrackerDirs>,
+    config: Option<Config>,
 }
 
 impl TrackerBuilder {
-    pub fn weekfile(mut self, weekfile: Option<PathBuf>) -> Self {
-        self.weekfile = weekfile;
+    pub fn explicit_weekfile(mut self, explicit_weekfile: Option<PathBuf>) -> Self {
+        self.explicit_weekfile = explicit_weekfile;
         self
     }
 
@@ -217,11 +248,29 @@ impl TrackerBuilder {
         self
     }
 
+    pub fn now(mut self, now: NaiveDateTime) -> Self {
+        self.now = Some(now);
+        self
+    }
+
+    pub fn dirs(mut self, dirs: TrackerDirs) -> Self {
+        self.dirs = Some(dirs);
+        self
+    }
+
+    pub fn config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
+    }
+
     pub fn build(self) -> Tracker {
         Tracker {
-            weekfile: self.weekfile,
+            explicit_weekfile: self.explicit_weekfile,
             weekdiff: self.weekdiff,
             parser: Parser::new(),
+            now: self.now.expect("now value required"),
+            dirs: self.dirs.expect("dirs value expected"),
+            config: self.config.unwrap_or_default(),
         }
     }
 }
@@ -266,19 +315,6 @@ fn default_document(week: IsoWeek, last_week: Option<IsoWeek>) -> Document {
 
 fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
     week_tracker_file_create_if_needed_with_transfer(week, path, None)
-}
-
-fn week_tracker_file_for_date(date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
-    let proj_dirs = ProjectDirs::from("tech", "skagedal", "tracker").unwrap();
-
-    let date = weekdiff
-        .map(|d| date + Duration::days(d as i64 * 7))
-        .unwrap_or(date);
-
-    proj_dirs
-        .data_dir()
-        .join("week-files")
-        .join(date.format("%Y-W%W.txt").to_string())
 }
 
 #[cfg(test)]

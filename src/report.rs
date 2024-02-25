@@ -1,6 +1,6 @@
 use std::ops::{Add, Sub};
 
-use crate::constants;
+use crate::config::WorkWeekConfig;
 use crate::document::{Day, Document, Line};
 use chrono::{Duration, IsoWeek, NaiveDate, NaiveDateTime};
 
@@ -12,7 +12,11 @@ pub struct Report {
     pub balance: Duration,
 }
 
-fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
+fn duration_for_line(
+    line: &Line,
+    now: Option<NaiveDateTime>,
+    workweek: &WorkWeekConfig,
+) -> Duration {
     match line {
         Line::ClosedShift {
             start_time,
@@ -26,47 +30,53 @@ fn duration_for_line(line: &Line, now: Option<NaiveDateTime>) -> Duration {
             stop_time,
             ..
         } => stop_time.signed_duration_since(*start_time),
-        Line::SpecialDay { .. } => Duration::hours(constants::WORK_HOURS_PER_DAY.into()),
+        Line::SpecialDay { .. } => Duration::hours(workweek.hours_per_day.into()),
         _ => Duration::zero(),
     }
 }
 
-fn duration_for_day(day: &Day) -> Duration {
+fn duration_for_day(day: &Day, workweek: &WorkWeekConfig) -> Duration {
     day.lines.iter().fold(Duration::hours(0), |acc, line| {
-        acc + duration_for_line(line, None)
+        acc + duration_for_line(line, None, workweek)
     })
 }
 
-fn duration_for_today(day: &Day, now: &NaiveDateTime) -> Duration {
+fn duration_for_today(day: &Day, now: &NaiveDateTime, workweek: &WorkWeekConfig) -> Duration {
     day.lines.iter().fold(Duration::hours(0), |acc, line| {
-        acc + duration_for_line(line, Some(*now))
+        acc + duration_for_line(line, Some(*now), workweek)
     })
 }
 
-fn expected_days_worked(week: IsoWeek, now: &NaiveDateTime) -> u32 {
+fn expected_days_worked(week: IsoWeek, now: &NaiveDateTime, workweek: &WorkWeekConfig) -> u32 {
     let now = now.date();
     let monday_of_week =
         NaiveDate::from_isoywd_opt(week.year(), week.week(), chrono::Weekday::Mon).unwrap();
     let days_since = now.signed_duration_since(monday_of_week).num_days() + 1;
-    num_traits::clamp(days_since as u32, 0, constants::WORK_DAYS_PER_WEEK)
+    num_traits::clamp(days_since as u32, 0, workweek.days_per_week)
 }
 
 impl Report {
-    pub fn from_document(document: &Document, now: &NaiveDateTime) -> Report {
+    pub fn from_document(
+        document: &Document,
+        now: &NaiveDateTime,
+        workweek: &WorkWeekConfig,
+    ) -> Report {
         let this_day = document.days.iter().find(|day| day.date == now.date());
         let duration_today = this_day
-            .map(|day| duration_for_today(day, now))
+            .map(|day| duration_for_today(day, now, workweek))
             .unwrap_or_else(Duration::zero);
         let duration_week = document
             .days
             .iter()
             .filter(|day| day.date != now.date())
-            .fold(Duration::hours(0), |acc, day| acc + duration_for_day(day))
+            .fold(Duration::hours(0), |acc, day| {
+                acc + duration_for_day(day, workweek)
+            })
             .add(duration_today);
 
-        let expected_days_so_far = expected_days_worked(document.week, now);
+        let expected_days_so_far = expected_days_worked(document.week, now, workweek);
         let expected_duration_so_far_week =
-            Duration::hours((expected_days_so_far * constants::WORK_HOURS_PER_DAY).into());
+            Duration::hours((expected_days_so_far * workweek.hours_per_day).into());
         let incoming_balance: Duration = document
             .preamble
             .iter()

@@ -1,6 +1,6 @@
 # tracker
 
-A simple command line program to help keep track of work time by storing data in a simple per-week text file. It is designed for the use case where you have flexible work hours, but wish to keep track that you work a certain number of hours per week – by default 40, divided into five work days.
+A simple command line program to help keep track of work time by storing data in a simple per-week text file. It is designed for the use case where you have flexible work hours, but wish to keep track that you work a certain number of hours per week. By default, it assumes that you work 8 hours per day, 5 days per week, but this can be configured.
 
 Run `tracker start` to start working. It might look like this (I use `$` here to represent your shell prompt): 
 
@@ -56,7 +56,20 @@ Tracker will only look at the current week file when stating your report. If you
 * balance 3h 12m
 ```
 
-This will add 3 hours and 12 minutes to the balance for the current week.
+This will add 3 hours and 12 minutes to the balance for the current week. 
 
 Such as balance shift is added automatically when you start a new week. 
 
+## Installation
+
+This program is, as far as I'm aware, only used by myself. Please file an issue if this is no longer the case, I would love to know! If you wish to install it, you would have to set up a Rust development environment and run `cargo install` in the root of the repository. I would also recommend setting up the shell completions – take a look in the file `install.sh` for how to do this – and setting up some nice aliases, for example `work` for `tracker start`.
+
+## Configuration
+
+`tracker` can be customized with a configuration file. Currently, you can set the number of hours in a work day and the number of work days in a week. The location of the file is system-dependent; on Linux, it is expected to be located at `~/.config/tracker/config.toml`. Here is an example of what it might look like: 
+
+```toml
+[workweek]
+days_per_week = 4       # Defaults to 5
+hours_per_day = 6       # Defaults to 8
+```

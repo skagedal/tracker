@@ -1,9 +1,11 @@
 use std::{io, path::PathBuf};
 
+use ::tracker::paths::TrackerDirs;
 use ::tracker::tracker::Tracker;
 use chrono::Local;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
+use tracker::config;
 
 /// Track work time
 #[derive(Parser, Debug)]
@@ -14,8 +16,8 @@ struct Args {
     week: Option<i32>,
 
     /// Use a custom week file (takes precedence over week)
-    #[arg(short('f'), long, value_name = "WEEKFILE")]
-    weekfile: Option<PathBuf>,
+    #[arg(short('f'), long("weekfile"), value_name = "WEEKFILE")]
+    explicit_weekfile: Option<PathBuf>,
 
     #[clap(subcommand)]
     command: Option<Commands>,
@@ -28,7 +30,11 @@ enum Commands {
     /// Stop tracking
     Stop,
     /// Edit tracking file
-    Edit,
+    Edit {
+        /// Only show path
+        #[arg(short, long)]
+        show_path: bool,
+    },
     /// Show a report
     Report {
         /// Only report with status code whether work is ongoing
@@ -41,50 +47,36 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    let tracker = Tracker::builder()
-        .weekfile(args.weekfile)
+    let now = Local::now().naive_local();
+    let dirs = TrackerDirs::real();
+    let config =
+        match config::read_config_from_path(&dirs.config_dir().to_path_buf().join("config.toml")) {
+            Ok(config) => config,
+            Err(config::ConfigError::OpenFile(path, err)) => {
+                eprintln!("Could not open config file at {}: {}", path.display(), err);
+                std::process::exit(1);
+            }
+            Err(config::ConfigError::InvalidFile(path, err)) => {
+                eprintln!("Invalid config file at {}: {}", path.display(), err);
+                std::process::exit(1);
+            }
+        };
+    // Now, we should actually use this config.
+    let tracker = Tracker::builder(now, dirs)
+        .config(config)
+        .explicit_weekfile(args.explicit_weekfile)
         .weekdiff(args.week)
         .build();
 
     match args.command {
-        Some(Commands::Start) => start_tracking(tracker),
-        Some(Commands::Stop) => stop_tracking(tracker),
-        Some(Commands::Edit) => edit_file(tracker),
-        Some(Commands::Report { is_working }) => show_report(tracker, is_working),
+        Some(Commands::Start) => tracker.start_tracking(),
+        Some(Commands::Stop) => tracker.stop_tracking(),
+        Some(Commands::Edit { show_path: true }) => tracker.show_weekfile_path(),
+        Some(Commands::Edit { show_path: false }) => tracker.edit_file(),
+        Some(Commands::Report { is_working }) => tracker.show_report(is_working),
         Some(Commands::Completions { shell }) => generate_completions(shell),
-        None => show_report(tracker, false),
+        None => tracker.show_report(false),
     }
-}
-
-// Commands
-
-fn start_tracking(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-    let time = now.naive_local().time();
-
-    tracker.start_tracking(date, time);
-}
-
-fn stop_tracking(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-    let time = now.naive_local().time();
-
-    tracker.stop_tracking(date, time);
-}
-
-fn edit_file(tracker: Tracker) {
-    let now = Local::now();
-    let date = now.naive_local().date();
-
-    tracker.edit_file(date);
-}
-
-fn show_report(tracker: Tracker, is_working: bool) {
-    let now = Local::now().naive_local();
-
-    tracker.show_report(now, is_working);
 }
 
 fn generate_completions(shell: Shell) {
