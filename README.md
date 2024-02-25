@@ -58,6 +58,8 @@ Tracker will only look at the current week file when stating your report. If you
 
 This will add 3 hours and 12 minutes to the balance for the current week. 
 
+(Under development: Such as balance shift will be added automatically when you start a new week.)
+
 ## Installation
 
 This program is, as far as I'm aware, only used by myself. Please file an issue if this is no longer the case, I would love to know! If you wish to install it, you would have to set up a Rust development environment and run `cargo install` in the root of the repository. I would also recommend setting up the shell completions – take a look in the file `install.sh` for how to do this – and setting up some nice aliases, for example `work` for `tracker start`.

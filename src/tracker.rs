@@ -30,8 +30,15 @@ impl Tracker {
     pub fn start_tracking(&self) {
         let date = self.now.date();
         let time = self.now.time();
-        let path_buf =
-            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date));
+        let path_buf = if self.config.experimental_features.auto_transfer_balance {
+            week_tracker_file_create_if_needed_with_transfer(
+                date.iso_week(),
+                self.week_tracker_file(date),
+                self.week_to_transfer_from(date),
+            )
+        } else {
+            week_tracker_file_create_if_needed(date.iso_week(), self.week_tracker_file(date))
+        };
         let document = self
             .read_document(date.iso_week(), path_buf.as_path())
             .unwrap_or_else(|err| {
@@ -104,6 +111,15 @@ impl Tracker {
         self.explicit_weekfile
             .clone()
             .unwrap_or_else(|| self.week_tracker_file_for_date(date, self.weekdiff))
+    }
+
+    // transfer only happens from previous week when no explicit week file or week diff has been set
+    fn week_to_transfer_from(&self, date: NaiveDate) -> Option<IsoWeek> {
+        if self.explicit_weekfile.is_none() && self.weekdiff.is_none() {
+            Some((date - Duration::days(7)).iso_week())
+        } else {
+            None
+        }
     }
 
     fn read_document(&self, week: IsoWeek, path: &Path) -> io::Result<Document> {
@@ -265,7 +281,11 @@ impl TrackerBuilder {
 
 // Week tracker file
 
-fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
+fn week_tracker_file_create_if_needed_with_transfer(
+    week: IsoWeek,
+    path: PathBuf,
+    last_week: Option<IsoWeek>,
+) -> PathBuf {
     // Create parents if needed
     if let Some(parent_path) = path.parent() {
         fs::create_dir_all(parent_path).unwrap_or_else(|err| eprintln!("Error: {}", err));
@@ -273,8 +293,8 @@ fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
 
     match OpenOptions::new().write(true).create_new(true).open(&path) {
         Ok(mut file) => {
-            let empty = Document::empty(week);
-            file.write_all(empty.to_string().as_bytes())
+            let initial_document = default_document(week, last_week);
+            file.write_all(initial_document.to_string().as_bytes())
                 .expect("Could not write example document to file");
         }
         Err(err) => {
@@ -285,6 +305,20 @@ fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
     }
 
     path
+}
+
+fn default_document(week: IsoWeek, last_week: Option<IsoWeek>) -> Document {
+    if let Some(_last_week) = last_week {
+        // let content = fs::read_to_string(path).expect("Could not read last week file");
+        // let last_week_document = Parser::new().parse_document(last_week, &content);
+        // return Document::empty_with_balance(last_week_document);
+        return Document::empty(week);
+    }
+    Document::empty(week)
+}
+
+fn week_tracker_file_create_if_needed(week: IsoWeek, path: PathBuf) -> PathBuf {
+    week_tracker_file_create_if_needed_with_transfer(week, path, None)
 }
 
 #[cfg(test)]
