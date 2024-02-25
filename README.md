@@ -2,6 +2,8 @@
 
 A simple command line program to help keep track of work time by storing data in a simple per-week text file. It is designed for the use case where you have flexible work hours, but wish to keep track that you work a certain number of hours per week. By default, it assumes that you work 8 hours per day, 5 days per week, but this can be configured.
 
+## Usage
+
 Run `tracker start` to start working. It might look like this (I use `$` here to represent your shell prompt): 
 
 ```
@@ -73,3 +75,15 @@ This program is, as far as I'm aware, only used by myself. Please file an issue 
 days_per_week = 4       # Defaults to 5
 hours_per_day = 6       # Defaults to 8
 ```
+
+## Alternatives
+
+There are many time tracking tools out there. Here are some open source alternatives.
+
+CLI-based:
+* [Timewarrior](https://timewarrior.net/)
+* [Watson](https://tailordev.github.io/Watson/)
+* [timetrace](https://github.com/dominikbraun/timetrace)
+
+Browser-based:
+* [Activity Watch](https://activitywatch.net)
