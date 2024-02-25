@@ -7,9 +7,11 @@ edition = "2021"
 clap = { version = "*", features = ["derive"] }
 clap_complete = "*"
 chrono = "*"
+# TODO: replace with etcetera
 directories = "*"
 num-traits = "*"
 regex = "*"
 serde = { version = "*", features = ["derive"] }
 temp-dir = "*"
 toml = "*"
+etcetera = "*"
