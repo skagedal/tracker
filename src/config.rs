@@ -11,6 +11,14 @@ pub struct Config {
     pub workweek: WorkWeekConfig,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            workweek: WorkWeekConfig::default(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkWeekConfig {
@@ -30,11 +38,11 @@ impl Default for WorkWeekConfig {
 }
 
 fn default_days_per_week() -> u32 {
-    constants::WORK_DAYS_PER_WEEK
+    constants::DEFAULT_WORK_DAYS_PER_WEEK
 }
 
 fn default_hours_per_day() -> u32 {
-    constants::WORK_HOURS_PER_DAY
+    constants::DEFAULT_WORK_HOURS_PER_DAY
 }
 
 #[derive(Debug)]

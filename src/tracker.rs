@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
 use crate::paths::TrackerDirs;
@@ -16,6 +17,7 @@ pub struct Tracker {
     parser: Parser,
     now: NaiveDateTime,
     dirs: TrackerDirs,
+    config: Config,
 }
 
 fn format_duration(duration: &Duration) -> String {
@@ -115,7 +117,7 @@ impl Tracker {
         let document = self
             .parser
             .parse_document(self.active_week(now.date()), &content);
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &self.config.workweek)
     }
 
     fn process_report_of_content(&self, content: String, now: NaiveDateTime, is_working: bool) {
@@ -220,6 +222,7 @@ pub struct TrackerBuilder {
     weekdiff: Option<i32>,
     now: Option<NaiveDateTime>,
     dirs: Option<TrackerDirs>,
+    config: Option<Config>,
 }
 
 impl TrackerBuilder {
@@ -243,6 +246,11 @@ impl TrackerBuilder {
         self
     }
 
+    pub fn config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
+    }
+
     pub fn build(self) -> Tracker {
         Tracker {
             explicit_weekfile: self.explicit_weekfile,
@@ -250,6 +258,7 @@ impl TrackerBuilder {
             parser: Parser::new(),
             now: self.now.expect("now value required"),
             dirs: self.dirs.expect("dirs value expected"),
+            config: self.config.unwrap_or_default(),
         }
     }
 }
