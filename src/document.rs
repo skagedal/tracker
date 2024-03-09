@@ -1,7 +1,7 @@
 use crate::document::Line::{
     Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
 };
-use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime, TimeDelta};
 use regex::{Captures, Regex};
 
 #[derive(PartialEq, Debug, Clone)]
@@ -356,10 +356,11 @@ impl Parser {
             .captures(string)
             .map(|m| DurationShift {
                 text: String::from(m.name("text").unwrap().as_str()),
-                duration: Duration::minutes(
+                duration: TimeDelta::try_minutes(
                     get_i64(&m, "hours") * 60
                         + get_i64(&m, "minutes") * get_i64(&m, "hours").signum(),
-                ),
+                )
+                .unwrap(),
             })
     }
 

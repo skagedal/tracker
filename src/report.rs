@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use crate::config::WorkWeekConfig;
 use crate::document::{Day, Document, Line};
-use chrono::{Duration, IsoWeek, NaiveDate, NaiveDateTime};
+use chrono::{Duration, IsoWeek, NaiveDate, NaiveDateTime, TimeDelta};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Report {
@@ -30,19 +30,19 @@ fn duration_for_line(
             stop_time,
             ..
         } => stop_time.signed_duration_since(*start_time),
-        Line::SpecialDay { .. } => Duration::hours(workweek.hours_per_day.into()),
+        Line::SpecialDay { .. } => TimeDelta::try_hours(workweek.hours_per_day.into()).unwrap(),
         _ => Duration::zero(),
     }
 }
 
 fn duration_for_day(day: &Day, workweek: &WorkWeekConfig) -> Duration {
-    day.lines.iter().fold(Duration::hours(0), |acc, line| {
+    day.lines.iter().fold(TimeDelta::zero(), |acc, line| {
         acc + duration_for_line(line, None, workweek)
     })
 }
 
 fn duration_for_today(day: &Day, now: &NaiveDateTime, workweek: &WorkWeekConfig) -> Duration {
-    day.lines.iter().fold(Duration::hours(0), |acc, line| {
+    day.lines.iter().fold(TimeDelta::zero(), |acc, line| {
         acc + duration_for_line(line, Some(*now), workweek)
     })
 }
@@ -69,14 +69,14 @@ impl Report {
             .days
             .iter()
             .filter(|day| day.date != now.date())
-            .fold(Duration::hours(0), |acc, day| {
+            .fold(TimeDelta::zero(), |acc, day| {
                 acc + duration_for_day(day, workweek)
             })
             .add(duration_today);
 
         let expected_days_so_far = expected_days_worked(document.week, now, workweek);
         let expected_duration_so_far_week =
-            Duration::hours((expected_days_so_far * workweek.hours_per_day).into());
+            TimeDelta::try_hours((expected_days_so_far * workweek.hours_per_day).into()).unwrap();
         let incoming_balance: Duration = document
             .preamble
             .iter()

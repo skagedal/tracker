@@ -3,7 +3,7 @@ use crate::document::Line::OpenShift;
 use crate::document::{Day, Document, Parser};
 use crate::paths::TrackerDirs;
 use crate::report::Report;
-use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -116,7 +116,7 @@ impl Tracker {
     // transfer only happens from previous week when no explicit week file or week diff has been set
     fn week_to_transfer_from(&self, date: NaiveDate) -> Option<IsoWeek> {
         if self.explicit_weekfile.is_none() && self.weekdiff.is_none() {
-            Some((date - Duration::days(7)).iso_week())
+            Some((date - TimeDelta::try_days(7).unwrap()).iso_week())
         } else {
             None
         }
@@ -203,14 +203,14 @@ impl Tracker {
 
     fn active_week(&self, date: NaiveDate) -> IsoWeek {
         self.weekdiff
-            .map(|d| date + Duration::days(d as i64 * 7))
+            .map(|d| date + TimeDelta::try_days(d as i64 * 7).unwrap())
             .unwrap_or(date)
             .iso_week()
     }
 
     fn week_tracker_file_for_date(&self, date: NaiveDate, weekdiff: Option<i32>) -> PathBuf {
         let date = weekdiff
-            .map(|d| date + Duration::days(d as i64 * 7))
+            .map(|d| date + TimeDelta::try_days(d as i64 * 7).unwrap())
             .unwrap_or(date);
 
         self.dirs
