@@ -2,7 +2,7 @@ use crate::document::Line::{
     Blank, ClosedShift, Comment, DayHeader, DurationShift, OpenShift, SpecialDay, SpecialShift,
 };
 use crate::document::{Day, Document, Parser};
-use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime};
+use chrono::{Datelike, Duration, IsoWeek, NaiveDate, NaiveTime, TimeDelta};
 
 #[test]
 fn read_line() {
@@ -51,6 +51,14 @@ fn read_line() {
             stop_time: time_hm(20, 2)
         }),
         parser.parse_line("* VAB 13:05-20:02")
+    );
+
+    assert_eq!(
+        Option::Some(DurationShift {
+            text: String::from("shift"),
+            duration: TimeDelta::try_hours(20).unwrap()
+        }),
+        parser.parse_line("* balance 20 h 0 m")
     );
 
     assert_eq!(Option::Some(Blank), parser.parse_line(""));
