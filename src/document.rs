@@ -289,7 +289,7 @@ impl Parser {
             day_header_regex: Regex::new(r"^\[[a-z]+\s+(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})]\s*$").unwrap(),
             open_shift_regex: Regex::new(r"^\* (?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})-\s*$").unwrap(),
             closed_shift_regex: Regex::new(r"^\* (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})\s*$").unwrap(),
-            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s+(?P<hours>-?[0-9]+)\s*h\s+(?P<minutes>[0-9]+)\s*m\s*$").unwrap(),
+            duration_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s+(?P<hours>-?[0-9]+)\s*h\s+(?P<minutes>-?[0-9]+)\s*m\s*$").unwrap(),
             special_shift_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+) (?P<startHour>[0-9]{2}):(?P<startMinute>[0-9]{2})-(?P<stopHour>[0-9]{2}):(?P<stopMinute>[0-9]{2})\s*$").unwrap(),
             special_day_regex: Regex::new(r"^\* (?P<text>[A-Za-z]+)\s*$").unwrap(),
             blank_regex: Regex::new(r"^\s*$").unwrap(),
@@ -357,8 +357,7 @@ impl Parser {
             .map(|m| DurationShift {
                 text: String::from(m.name("text").unwrap().as_str()),
                 duration: TimeDelta::try_minutes(
-                    get_i64(&m, "hours") * 60
-                        + get_i64(&m, "minutes") * get_i64(&m, "hours").signum(),
+                    get_i64(&m, "hours") * 60 + get_i64(&m, "minutes"),
                 )
                 .unwrap(),
             })
