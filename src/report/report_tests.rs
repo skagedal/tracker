@@ -1,6 +1,7 @@
 use chrono::{Datelike, NaiveDate};
 
 use crate::{
+    config::WorkWeekConfig,
     document::{Day, Document, Line},
     report::Report,
     testutils::{iso_date, iso_week, naive_date, naive_date_time, naive_time},
@@ -18,7 +19,7 @@ fn empty_report() {
             is_ongoing: false,
             balance: chrono::Duration::hours(-8)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }
 
@@ -43,7 +44,7 @@ fn simple_report() {
             is_ongoing: false,
             balance: chrono::Duration::hours(-4)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }
 
@@ -67,7 +68,7 @@ fn special_days_are_counted() {
             is_ongoing: false,
             balance: chrono::Duration::hours(0)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }
 
@@ -93,7 +94,7 @@ fn special_shifts_are_counted() {
             is_ongoing: false,
             balance: chrono::Duration::minutes(40 - 8 * 60)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }
 
@@ -134,7 +135,7 @@ fn shifts_are_summed_correctly() {
             is_ongoing: false,
             balance: chrono::Duration::minutes(285 - 2 * 8 * 60)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }
 
@@ -169,6 +170,6 @@ fn report_for_earlier_week() {
             is_ongoing: false,
             balance: chrono::Duration::hours(0)
         },
-        Report::from_document(&document, &now)
+        Report::from_document(&document, &now, &WorkWeekConfig::default())
     )
 }

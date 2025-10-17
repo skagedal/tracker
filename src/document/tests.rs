@@ -55,7 +55,7 @@ fn read_line() {
 
     assert_eq!(
         Option::Some(DurationShift {
-            text: String::from("shift"),
+            text: String::from("balance"),
             duration: TimeDelta::try_hours(20).unwrap()
         }),
         parser.parse_line("* balance 20 h 0 m")
