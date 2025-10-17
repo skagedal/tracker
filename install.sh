@@ -4,6 +4,7 @@
 
 set -e
 
+cargo test
 cargo install --path .
 
 if [ -d ~/.oh-my-zsh ]; then
