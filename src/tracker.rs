@@ -45,9 +45,16 @@ impl Tracker {
                 panic!("Unexpected error reading document: {}", err);
             });
 
-        let document = self
-            .document_with_tracking_started(&document, date, time)
-            .expect("Start tracking failed");
+        let document = match self.document_with_tracking_started(&document, date, time) {
+            Ok(doc) => doc,
+            Err(DocumentError::TrackerFileAlreadyHasOpenShift) => {
+                eprintln!("You are already tracking. Use `tracker stop` to end the current shift. If you forgot to stop tracking earlier, use `tracker edit`.");
+                std::process::exit(1);
+            }
+            Err(_) => {
+                panic!("Unexpected error starting tracking");
+            }
+        };
 
         self.write_day_stdout(&document, date);
 
