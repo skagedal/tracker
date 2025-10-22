@@ -48,7 +48,19 @@ Here is an example of what a file might look like after two days of tracking:
 
 Each day starts with the week day and ISO-formatted date in square brackets. (The duplication in information is intentional, to make it easier to read the file.) Each shift is represented by a line starting with an asterisk, followed by the start and end time in 24-hour format, separated by a hyphen.
 
-Comments can be written in the file using lines starting with `#`. 
+Comments can be written in the file using lines starting with `#`.
+
+## Specifying a start time
+
+If you forgot to run `tracker start` when you started working, you can specify a start time when you run the command:
+
+```
+$ tracker start 08:30
+[monday 2024-01-08]
+* 08:30-
+```
+
+The time should be in `HH:MM` format (24-hour format).
 
 ## Transferring balance
 

@@ -4,7 +4,7 @@ use ::tracker::paths::TrackerDirs;
 use ::tracker::tracker::Tracker;
 use chrono::Local;
 use clap::{CommandFactory, Parser, Subcommand};
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 use tracker::config;
 
 /// Track work time
@@ -26,7 +26,10 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Start tracking
-    Start,
+    Start {
+        /// Start time in HH:MM format (e.g., 08:30)
+        time: Option<String>,
+    },
     /// Stop tracking
     Stop,
     /// Edit tracking file
@@ -69,7 +72,7 @@ fn main() {
         .build();
 
     match args.command {
-        Some(Commands::Start) => tracker.start_tracking(),
+        Some(Commands::Start { time }) => tracker.start_tracking(time),
         Some(Commands::Stop) => tracker.stop_tracking(),
         Some(Commands::Edit { show_path: true }) => tracker.show_weekfile_path(),
         Some(Commands::Edit { show_path: false }) => tracker.edit_file(),

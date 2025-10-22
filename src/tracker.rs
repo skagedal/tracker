@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::document::Line::OpenShift;
+use crate::document::Line::{self, OpenShift};
 use crate::document::{Day, Document, Parser};
 use crate::paths::TrackerDirs;
 use crate::report::Report;
@@ -27,9 +27,12 @@ fn format_duration(duration: &Duration) -> String {
 }
 
 impl Tracker {
-    pub fn start_tracking(&self) {
+    pub fn start_tracking(&self, time_str: Option<String>) {
         let date = self.now.date();
-        let time = self.now.time();
+        let time = match time_str {
+            Some(time_str) => self.parse_time(&time_str),
+            None => self.now.time(),
+        };
         let path_buf = if self.config.experimental_features.auto_transfer_balance {
             week_tracker_file_create_if_needed_with_transfer(
                 date.iso_week(),
@@ -45,10 +48,18 @@ impl Tracker {
                 panic!("Unexpected error reading document: {}", err);
             });
 
+        // Validate that start time is not before the end time of the previous shift
+        if let Err(err) = self.validate_start_time(&document, date, time) {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+
         let document = match self.document_with_tracking_started(&document, date, time) {
             Ok(doc) => doc,
             Err(DocumentError::TrackerFileAlreadyHasOpenShift) => {
-                eprintln!("You are already tracking. Use `tracker stop` to end the current shift. If you forgot to stop tracking earlier, use `tracker edit`.");
+                eprintln!(
+                    "You are already tracking. Use `tracker stop` to end the current shift. If you forgot to stop tracking earlier, use `tracker edit`."
+                );
                 std::process::exit(1);
             }
             Err(_) => {
@@ -206,6 +217,72 @@ impl Tracker {
             .get_day(date)
             .expect("this should be called right after day is modified");
         print!("{}", day.to_string())
+    }
+
+    fn parse_time(&self, time_str: &str) -> NaiveTime {
+        let parts: Vec<&str> = time_str.split(':').collect();
+        if parts.len() != 2 {
+            eprintln!("Invalid time format. Expected HH:MM (e.g., 08:30)");
+            std::process::exit(1);
+        }
+
+        let hour = parts[0].parse::<u32>().unwrap_or_else(|_| {
+            eprintln!("Invalid hour in time format. Expected HH:MM (e.g., 08:30)");
+            std::process::exit(1);
+        });
+
+        let minute = parts[1].parse::<u32>().unwrap_or_else(|_| {
+            eprintln!("Invalid minute in time format. Expected HH:MM (e.g., 08:30)");
+            std::process::exit(1);
+        });
+
+        NaiveTime::from_hms_opt(hour, minute, 0).unwrap_or_else(|| {
+            eprintln!("Invalid time. Hour must be 0-23 and minute must be 0-59");
+            std::process::exit(1);
+        })
+    }
+
+    fn validate_start_time(
+        &self,
+        document: &Document,
+        date: NaiveDate,
+        time: NaiveTime,
+    ) -> Result<(), String> {
+        // Find the last closed shift on the same date or before
+        let mut last_end_time: Option<(NaiveDate, NaiveTime)> = None;
+
+        for day in &document.days {
+            if day.date > date {
+                break;
+            }
+
+            for line in &day.lines {
+                match line {
+                    Line::ClosedShift { stop_time, .. } => {
+                        last_end_time = Some((day.date, *stop_time));
+                    }
+                    Line::SpecialShift { stop_time, .. } => {
+                        last_end_time = Some((day.date, *stop_time));
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        if let Some((last_date, last_time)) = last_end_time {
+            // If the last shift was on the same day
+            if last_date == date && time < last_time {
+                return Err(format!(
+                    "Start time {} is before the end time {} of the previous shift on the same day",
+                    time.format("%H:%M"),
+                    last_time.format("%H:%M")
+                ));
+            }
+            // If the last shift was on a previous day, we don't need to validate
+            // (shifts can start earlier on a new day)
+        }
+
+        Ok(())
     }
 
     fn active_week(&self, date: NaiveDate) -> IsoWeek {

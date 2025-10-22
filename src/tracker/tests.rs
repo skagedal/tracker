@@ -225,6 +225,69 @@ fn we_can_stop_a_shift() {
     );
 }
 
+#[test]
+fn validation_passes_when_start_time_is_after_previous_shift_end_time() {
+    let tracker = build_tracker().build();
+    let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
+        vec![],
+        vec![Day {
+            date: naive_date(2019, 12, 2),
+            lines: vec![Line::ClosedShift {
+                start_time: naive_time(8, 0),
+                stop_time: naive_time(12, 0),
+            }],
+        }],
+    );
+    let result = tracker.validate_start_time(&document, naive_date(2019, 12, 2), naive_time(13, 0));
+    assert!(result.is_ok());
+}
+
+#[test]
+fn validation_fails_when_start_time_is_before_previous_shift_end_time() {
+    let tracker = build_tracker().build();
+    let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
+        vec![],
+        vec![Day {
+            date: naive_date(2019, 12, 2),
+            lines: vec![Line::ClosedShift {
+                start_time: naive_time(8, 0),
+                stop_time: naive_time(12, 0),
+            }],
+        }],
+    );
+    let result = tracker.validate_start_time(&document, naive_date(2019, 12, 2), naive_time(11, 0));
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("before the end time"));
+}
+
+#[test]
+fn validation_passes_when_starting_shift_on_new_day_even_if_earlier_than_previous_day() {
+    let tracker = build_tracker().build();
+    let document = Document::new(
+        naive_date(2019, 12, 2).iso_week(),
+        vec![],
+        vec![Day {
+            date: naive_date(2019, 12, 2),
+            lines: vec![Line::ClosedShift {
+                start_time: naive_time(8, 0),
+                stop_time: naive_time(17, 0),
+            }],
+        }],
+    );
+    let result = tracker.validate_start_time(&document, naive_date(2019, 12, 3), naive_time(8, 30));
+    assert!(result.is_ok());
+}
+
+#[test]
+fn validation_passes_when_no_previous_shifts_exist() {
+    let tracker = build_tracker().build();
+    let document = Document::empty(naive_date(2019, 12, 2).iso_week());
+    let result = tracker.validate_start_time(&document, naive_date(2019, 12, 2), naive_time(8, 0));
+    assert!(result.is_ok());
+}
+
 fn build_tracker() -> TrackerBuilder {
     Tracker::builder(naive_date_time(2023, 12, 2, 12, 0), TrackerDirs::real())
 }
