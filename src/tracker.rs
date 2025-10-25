@@ -77,15 +77,27 @@ impl Tracker {
         let date = self.now.date();
         let time = self.now.time();
         let path_buf = self.week_tracker_file(date);
-        let document = self
-            .read_document(date.iso_week(), path_buf.as_path())
-            .unwrap_or_else(|err| {
+        let document = match self.read_document(date.iso_week(), path_buf.as_path()) {
+            Ok(document) => document,
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                println!("No tracking file for this week has been created.");
+                return;
+            }
+            Err(err) => {
                 panic!("Unexpected error reading document: {}", err);
-            });
+            }
+        };
 
-        let document = self
-            .document_with_tracking_stopped(&document, date, time)
-            .expect("Stop tracking failed");
+        let document = match self.document_with_tracking_stopped(&document, date, time) {
+            Ok(document) => document,
+            Err(DocumentError::TrackerFileDoesNotHaveOpenShift) => {
+                println!("No session has started.");
+                return;
+            }
+            Err(_) => {
+                panic!("Unexpected error stopping tracking");
+            }
+        };
 
         self.write_day_stdout(&document, date);
 
