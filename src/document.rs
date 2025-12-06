@@ -60,7 +60,7 @@ impl ToString for Line {
                 "* {} {}h {}m",
                 text,
                 duration.num_hours(),
-                (duration.num_minutes() - duration.num_hours() * 60).abs()
+                duration.num_minutes() - duration.num_hours() * 60
             ),
             SpecialDay { text } => format!("* {}", text),
             SpecialShift {

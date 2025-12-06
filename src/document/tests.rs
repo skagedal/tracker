@@ -61,7 +61,30 @@ fn read_line() {
         parser.parse_line("* balance 20 h 0 m")
     );
 
+    assert_eq!(
+        Option::Some(DurationShift {
+            text: String::from("balance"),
+            duration: TimeDelta::try_minutes(-5 * 60 - 6).unwrap()
+        }),
+        parser.parse_line("* balance -5h -6m")
+    );
+
     assert_eq!(Option::Some(Blank), parser.parse_line(""));
+}
+
+#[test]
+fn serde_duration() {
+    let parser = Parser::new();
+
+    let line = "* carry 1h 30m";
+    let parsed = parser.parse_line(line).unwrap();
+    let serialized = parsed.to_string();
+    assert_eq!(line, serialized);
+
+    let line = "* carry -2h -15m";
+    let parsed = parser.parse_line(line).unwrap();
+    let serialized = parsed.to_string();
+    assert_eq!(line, serialized);
 }
 
 #[test]
@@ -118,6 +141,10 @@ fn example_1_document() -> Document {
             DurationShift {
                 text: String::from("carry"),
                 duration: Duration::minutes(70),
+            },
+            DurationShift {
+                text: String::from("negativecarry"),
+                duration: Duration::minutes(-130),
             },
             Blank,
         ],
@@ -195,6 +222,7 @@ fn example_1_text() -> String {
     String::from(
         "# Preamble
 * carry 1h 10m
+* negativecarry -2h -10m
 
 [monday 2020-07-13]
 * Vacation
