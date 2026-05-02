@@ -1,5 +1,11 @@
 # tracker
 
+> **This repository has moved.** The `tracker` tool now lives in the
+> [skagedal-tools monorepo](https://github.com/skagedal/skagedal-tools/tree/main/tracker).
+> It was imported there in commit
+> [`703657a`](https://github.com/skagedal/skagedal-tools/commit/703657a).
+> This repository is archived and no longer maintained.
+
 A simple command line program to help keep track of work time by storing data in a simple per-week text file. It is designed for the use case where you have flexible work hours, but wish to keep track that you work a certain number of hours per week. By default, it assumes that you work 8 hours per day, 5 days per week, but this can be configured.
 
 ## Usage
